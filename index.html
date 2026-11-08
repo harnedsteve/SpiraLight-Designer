@@ -25,7 +25,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.4.0</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.4.1</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern">
 <div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
@@ -87,7 +87,7 @@ function draw(){
  $("ledPeriod").textContent=exposure>0&&s>0?(exposure/s).toFixed(2)+" s/rev":"—";
  const canvas=$("preview"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,600,600);
  if(![s,r,radius].every(n=>Number.isFinite(n)&&n>0)||!leds.length)return;
- const maxD=Math.max(...leds.map(l=>OFFSET+(l.index-1)*SPACING));
+ const maxD=OFFSET+(LED_COUNT-1)*SPACING;
  const scale=270/(radius+maxD),symmetry=$("mode").value==="symmetry";
  leds.forEach(led=>{
   const d=OFFSET+(led.index-1)*SPACING;
@@ -164,7 +164,7 @@ $("importFile").onchange=async e=>{
  catch(err){message("Cannot open pattern: "+err.message,true);}
  finally{e.target.value="";}
 };
-const DESIGNER_VERSION="0.4.0";
+const DESIGNER_VERSION="0.4.1";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
