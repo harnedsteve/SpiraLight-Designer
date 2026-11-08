@@ -25,7 +25,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.5.2</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.5.3</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern">
 <div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
@@ -37,11 +37,11 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 <div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas></section>
 <section class="card"><h2>LEDs</h2><small>18 LEDs · 60/m · LED #1 offset 80 mm · up to 10 active</small><button id="add">Add LED</button><div id="leds"></div></section></div>
 <div class="card"><h2>Pattern files</h2>
-<button class="primary" id="export">Export JSON (v1)</button><button id="exportV2">Export Pattern v2</button>
+<button class="primary" id="exportV2">Export Pattern v2</button>
 <button id="importButton">Open JSON</button>
 <input id="importFile" type="file" accept=".json,application/json" hidden>
 <button id="reset">New Pattern</button>
-<p><small>Export a JSON file, then use SpiraLight's Import JSON File control when connected to the rig. Files can also be opened here for further editing.</small></p>
+<p><small>Export reusable version 2 patterns. Existing version 1 files can still be opened. Current SpiraLight firmware cannot yet import version 2 files.</small></p>
 <div id="status" role="status" aria-live="polite"></div></div>
 <script>
 "use strict";
@@ -165,17 +165,6 @@ document.querySelectorAll("button[data-field][data-delta]").forEach(button=>{
 });
 for(const id of ["mode","s","r","radius","exposure"])$(id).addEventListener("input",draw);
 $("reset").onclick=()=>{if(!confirm("Start a new pattern? Unsaved changes will be lost."))return;load({schemaVersion:1,name:"New Pattern",mode:"symmetry",symmetry:5,revolutions:3,mainRadiusMm:380,exposureSeconds:20,ledArm:{ledCount:18,offsetMm:80,spacingMm:SPACING},leds:[{index:1,color:"#ff0000",brightness:40}]});message("New pattern ready");};
-$("export").onclick=()=>{
- try{
-  const p=pattern();validate(p);
-  if(preservedEvents.length||preservedOffset!==0||preservedDirection!=="cw")throw Error("Version 1 cannot preserve advanced events or offset. Export v2 instead.");
-  const blob=new Blob([JSON.stringify(p,null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob),link=document.createElement("a");
-  link.href=url;link.download=(p.name.replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,48)||"pattern")+".json";
-  document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-  message("Export requested. Save the JSON file using your device's download controls.");
- }catch(e){message(e.message,true);}
-};
 $("exportV2").onclick=()=>{
  try{
   const p=exportV2(),blob=new Blob([JSON.stringify(p,null,2)],{type:"application/json"});
@@ -198,7 +187,7 @@ $("importFile").onchange=async e=>{
  catch(err){message("Cannot open pattern: "+err.message,true);}
  finally{e.target.value="";}
 };
-const DESIGNER_VERSION="0.5.2";
+const DESIGNER_VERSION="0.5.3";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
