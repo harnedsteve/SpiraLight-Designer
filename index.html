@@ -25,7 +25,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.5.0</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.5.1</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern">
 <div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
@@ -196,27 +196,30 @@ $("importFile").onchange=async e=>{
  catch(err){message("Cannot open pattern: "+err.message,true);}
  finally{e.target.value="";}
 };
-const DESIGNER_VERSION="0.5.0";
+const DESIGNER_VERSION="0.5.1";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
  try{
   if(!navigator.onLine)throw Error("Connect to the Internet to check for updates.");
+  // Query-string cache busting is necessary for older service workers.
   const response=await fetch("./index.html?updateCheck="+Date.now(),{cache:"no-store"});
   if(!response.ok)throw Error("Update server unavailable.");
-  const html=await response.text();
-  const match=html.match(/const DESIGNER_VERSION="([^"]+)"/);
+  const html=await response.text(),match=html.match(/const DESIGNER_VERSION="([^"]+)"/);
   if(!match)throw Error("Could not identify the published designer version.");
   if(match[1]===DESIGNER_VERSION){status.textContent="Designer v"+DESIGNER_VERSION+" is current.";return;}
-  status.textContent="New version "+match[1]+" found. Installing…";
-  if(!("serviceWorker" in navigator))throw Error("Offline updates are unavailable in this browser.");
-  const registration=await navigator.serviceWorker.ready;
-  let changed=false;
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!changed){changed=true;location.reload();}},{once:true});
-  await registration.update();
-  if(registration.waiting)registration.waiting.postMessage({type:"SKIP_WAITING"});
-  status.textContent="Update downloaded. Close and reopen the designer if it does not refresh automatically.";
- }catch(e){status.textContent=e.message;}
+  status.textContent="Version "+match[1]+" available. Refreshing offline files…";
+  if("serviceWorker" in navigator){
+   const registration=await navigator.serviceWorker.getRegistration();
+   if(registration){
+    await registration.update();
+    if(registration.waiting)registration.waiting.postMessage({type:"SKIP_WAITING"});
+   }
+  }
+  // Reload with a unique URL: old service workers may cache the bare navigation.
+  status.textContent="Opening updated version "+match[1]+"…";
+  location.replace("./index.html?version="+encodeURIComponent(match[1])+"&refresh="+Date.now());
+ }catch(e){status.textContent="Update failed: "+e.message;}
  finally{button.disabled=false;}
 };
 renderLEDs();draw();
