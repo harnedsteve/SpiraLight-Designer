@@ -13,7 +13,14 @@ input,select{padding:8px;border:1px solid #aaa;border-radius:6px}
 button{padding:10px 13px;border:1px solid #777;border-radius:8px;background:#f8f8f8;margin:3px;cursor:pointer}
 button.primary{background:#245fba;color:white;border-color:#245fba}
 canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;background:#101218;border-radius:8px}
-.led{border-top:1px solid #ddd;padding:10px 0}.led input[type=range]{width:125px}
+.led{border-top:1px solid #ddd;padding:12px 0}.led input[type=range]{width:100%;min-width:0;height:44px;accent-color:#245fba;touch-action:pan-y}
+.led input[type=range]::-webkit-slider-thumb{width:30px;height:30px}
+.led .index-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.led .index-controls input{flex:1 1 160px}
+.stepper{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.stepper button,.index-controls button{min-width:46px;min-height:46px;margin:1px;font-weight:600}
+.stepper input{width:76px;text-align:center}
+@media(max-width:520px){.parameter-row{display:block}.parameter-row>.stepper{justify-content:flex-start;margin-top:8px}.led .row{flex-wrap:wrap}}
 #status{min-height:1.5em;font-weight:600}#status.error{color:#a20d0d}
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
@@ -23,12 +30,12 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 <div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row"><label for="s">Symmetry / numerator (S)</label><input id="s" type="number" min="1" max="100" step="1" value="5"></div>
 <div class="row"><label for="r">Closure revolutions / denominator (R)</label><input id="r" type="number" min="1" max="100" step="1" value="3"></div>
-<div class="row"><label for="radius">Main Arm radius (mm)</label><input id="radius" type="number" min="1" max="2000" value="380"></div>
-<div class="row"><label for="exposure">Exposure (seconds)</label><input id="exposure" type="number" min="0.1" max="3600" step="0.1" value="20"></div>
+<div class="row parameter-row"><label for="radius">Main Arm radius (mm)</label><div class="stepper"><button type="button" data-field="radius" data-delta="-10" aria-label="Decrease radius by 10">−10</button><button type="button" data-field="radius" data-delta="-1" aria-label="Decrease radius by 1">−1</button><input id="radius" type="number" min="1" max="2000" step="1" inputmode="numeric" value="380"><button type="button" data-field="radius" data-delta="1" aria-label="Increase radius by 1">+1</button><button type="button" data-field="radius" data-delta="10" aria-label="Increase radius by 10">+10</button></div></div>
+<div class="row parameter-row"><label for="exposure">Exposure (seconds)</label><div class="stepper"><button type="button" data-field="exposure" data-delta="-10" aria-label="Decrease exposure by 10 seconds">−10</button><button type="button" data-field="exposure" data-delta="-1" aria-label="Decrease exposure by 1 second">−1</button><input id="exposure" type="number" min="0.1" max="3600" step="0.1" inputmode="decimal" value="20"><button type="button" data-field="exposure" data-delta="1" aria-label="Increase exposure by 1 second">+1</button><button type="button" data-field="exposure" data-delta="10" aria-label="Increase exposure by 10 seconds">+10</button></div></div>
 <div class="row"><span>Main Arm speed</span><strong id="mainPeriod"></strong></div>
 <div class="row"><span>LED Arm speed</span><strong id="ledPeriod"></strong></div></div>
 <div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas></section>
-<section class="card"><h2>LEDs</h2><small>18 LEDs · 60/m · LED #1 offset 80 mm · up to 10 active</small><div id="leds"></div><button id="add">Add LED</button></section></div>
+<section class="card"><h2>LEDs</h2><small>18 LEDs · 60/m · LED #1 offset 80 mm · up to 10 active</small><button id="add">Add LED</button><div id="leds"></div></section></div>
 <div class="card"><h2>Pattern files</h2>
 <button class="primary" id="export">Export JSON</button>
 <button id="importButton">Open JSON</button>
@@ -53,7 +60,17 @@ function renderLEDs(){
   const index=document.createElement("input");index.type="range";index.min=1;index.max=LED_COUNT;index.value=led.index;
   const indexLabel=document.createElement("span");indexLabel.textContent="Index "+led.index;
   index.oninput=()=>{const value=Number(index.value);if(leds.some((v,i)=>i!==pos&&v.index===value)){index.value=led.index;return;}led.index=value;indexLabel.textContent="Index "+value;draw();};
-  const indexRow=document.createElement("div");indexRow.className="row";indexRow.append(indexLabel,index);div.append(indexRow);
+  const indexRow=document.createElement("div");indexRow.className="index-controls";
+  const minus=document.createElement("button");minus.type="button";minus.textContent="−";minus.setAttribute("aria-label","Previous LED index");
+  const plus=document.createElement("button");plus.type="button";plus.textContent="+";plus.setAttribute("aria-label","Next LED index");
+  function changeIndex(direction){
+   let next=led.index+direction;
+   while(next>=1&&next<=LED_COUNT&&leds.some((v,i)=>i!==pos&&v.index===next))next+=direction;
+   if(next<1||next>LED_COUNT)return;
+   led.index=next;index.value=next;indexLabel.textContent="Index "+next;draw();
+  }
+  minus.onclick=()=>changeIndex(-1);plus.onclick=()=>changeIndex(1);
+  indexRow.append(indexLabel,minus,index,plus);div.append(indexRow);
   const color=document.createElement("input");color.type="color";color.value=led.color;color.oninput=()=>{led.color=color.value;draw();};
   const colorRow=document.createElement("div");colorRow.className="row";const colorLabel=document.createElement("label");colorLabel.textContent="Color";colorRow.append(colorLabel,color);div.append(colorRow);
   const brightness=document.createElement("input");brightness.type="range";brightness.min=0;brightness.max=100;brightness.value=led.brightness;
@@ -117,7 +134,17 @@ function load(p){
  leds=p.leds.map(l=>({index:l.index,color:l.color,brightness:l.brightness}));
  renderLEDs();draw();
 }
-$("add").onclick=()=>{if(leds.length>=MAX_ACTIVE)return;const used=new Set(leds.map(l=>l.index));let i=1;while(used.has(i))i++;leds.push({index:i,color:"#ffffff",brightness:40});renderLEDs();draw();};
+$("add").onclick=()=>{if(leds.length>=MAX_ACTIVE)return;const used=new Set(leds.map(l=>l.index));let i=1;while(used.has(i))i++;leds.unshift({index:i,color:"#ffffff",brightness:40});renderLEDs();draw();};
+document.querySelectorAll("button[data-field][data-delta]").forEach(button=>{
+ button.onclick=()=>{
+  const input=$(button.dataset.field);
+  const min=Number(input.min),max=Number(input.max),delta=Number(button.dataset.delta);
+  const current=Number(input.value);
+  const next=Math.min(max,Math.max(min,(Number.isFinite(current)?current:min)+delta));
+  input.value=String(Math.round(next*10)/10);
+  draw();
+ };
+});
 for(const id of ["mode","s","r","radius","exposure"])$(id).addEventListener("input",draw);
 $("reset").onclick=()=>{if(!confirm("Start a new pattern? Unsaved changes will be lost."))return;load({schemaVersion:1,name:"New Pattern",mode:"symmetry",symmetry:5,revolutions:3,mainRadiusMm:380,exposureSeconds:20,ledArm:{ledCount:18,offsetMm:80,spacingMm:SPACING},leds:[{index:1,color:"#ff0000",brightness:40}]});message("New pattern ready");};
 $("export").onclick=()=>{
