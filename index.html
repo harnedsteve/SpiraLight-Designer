@@ -25,7 +25,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.5.1</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.5.2</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern">
 <div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
@@ -47,7 +47,8 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 "use strict";
 const LED_COUNT=18,OFFSET=80,SPACING=1000/60,MAX_ACTIVE=10;
 const $=id=>document.getElementById(id);
-let leds=[{index:1,color:"#ff0000",brightness:40}];
+let nextLedLabel=2;
+let leds=[{index:1,color:"#ff0000",brightness:40,labelId:1}];
 let preservedEvents=[],preservedOffset=0,preservedDirection="cw";
 function message(text,error=false){$("status").textContent=text;$("status").className=error?"error":"";}
 function renderLEDs(){
@@ -55,7 +56,7 @@ function renderLEDs(){
  leds.forEach((led,pos)=>{
   const div=document.createElement("div");div.className="led";
   const heading=document.createElement("div");heading.className="row";
-  const title=document.createElement("strong");title.textContent="LED "+(pos+1);
+  const title=document.createElement("strong");title.textContent="LED "+led.labelId;
   const remove=document.createElement("button");remove.textContent="Remove";remove.onclick=()=>{if(leds.length===1)return;leds.splice(pos,1);renderLEDs();draw();};
   heading.append(title,remove);div.append(heading);
   const index=document.createElement("input");index.type="range";index.min=1;index.max=LED_COUNT;index.value=led.index;
@@ -109,7 +110,7 @@ function pattern(){
  symmetry:Number($("s").value),revolutions:Number($("r").value),
  mainRadiusMm:Number($("radius").value),exposureSeconds:Number($("exposure").value),
  ledArm:{ledCount:LED_COUNT,offsetMm:OFFSET,spacingMm:SPACING},
- leds:leds.map(l=>({...l}))};
+ leds:leds.map(({index,color,brightness})=>({index,color,brightness}))};
 }
 function validate(p){
  if(!p||Array.isArray(p)||p.schemaVersion!==1)throw Error("Unsupported pattern format");
@@ -146,11 +147,12 @@ function load(p){
  validate(p);
  $("name").value=p.name;$("mode").value=p.mode;$("s").value=p.symmetry;$("r").value=p.revolutions;
  $("radius").value=p.mainRadiusMm;$("exposure").value=p.exposureSeconds;
- leds=p.leds.map(l=>({index:l.index,color:l.color,brightness:l.brightness}));
+ nextLedLabel=1;
+ leds=p.leds.map(l=>({index:l.index,color:l.color,brightness:l.brightness,labelId:nextLedLabel++}));
  preservedEvents=[];preservedOffset=0;preservedDirection="cw";
  renderLEDs();draw();
 }
-$("add").onclick=()=>{if(leds.length>=MAX_ACTIVE)return;const used=new Set(leds.map(l=>l.index));let i=1;while(used.has(i))i++;leds.unshift({index:i,color:"#ffffff",brightness:40});renderLEDs();draw();};
+$("add").onclick=()=>{if(leds.length>=MAX_ACTIVE)return;const used=new Set(leds.map(l=>l.index));let i=1;while(used.has(i))i++;leds.unshift({index:i,color:"#ffffff",brightness:40,labelId:nextLedLabel++});renderLEDs();draw();};
 document.querySelectorAll("button[data-field][data-delta]").forEach(button=>{
  button.onclick=()=>{
   const input=$(button.dataset.field);
@@ -196,7 +198,7 @@ $("importFile").onchange=async e=>{
  catch(err){message("Cannot open pattern: "+err.message,true);}
  finally{e.target.value="";}
 };
-const DESIGNER_VERSION="0.5.1";
+const DESIGNER_VERSION="0.5.2";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
