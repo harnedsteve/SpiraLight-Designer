@@ -196,7 +196,7 @@ $("importFile").onchange=async e=>{
  catch(err){message("Cannot open pattern: "+err.message,true);}
  finally{e.target.value="";}
 };
-const DESIGNER_VERSION="0.4.1";
+const DESIGNER_VERSION="0.5.0";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
