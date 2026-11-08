@@ -210,7 +210,7 @@ function drawComposition(){
  let arm1;try{arm1=exportV2();}catch(e){$("exportComposition").disabled=true;return;}
  const patterns=[arm1EditingBackup?arm1EditingBackup.pattern:arm1,arm1EditingBackup?arm1:arm2Pattern].filter(Boolean);
  const compatible=patterns.every(p=>p.motion.revolutions===rev&&p.leds.every(l=>l.index<=p.referenceLedArm.ledCount))&&(!arm2Pattern||(Number.isFinite(radius2)&&radius2>=1&&radius2<=2000));
- $("exportComposition").disabled=!compatible;
+ $("exportComposition").disabled=!compatible||!!arm1EditingBackup;
  if(!compatible){$("arm2Status").textContent="Arm 2 incompatible: Main Arm revolutions must match Arm 1.";return;}
  if(arm2Pattern&&!arm1EditingBackup)$("arm2Status").textContent="Loaded: "+arm2Pattern.name+" ("+arm2Pattern.motion.revolutions+" main revolutions)";
  const reach=Math.max(...patterns.map((p,i)=>(i===0?radius:radius2)+p.referenceLedArm.offsetMm+(p.referenceLedArm.ledCount-1)*p.referenceLedArm.spacingMm));
