@@ -25,7 +25,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.4.1</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.5.0</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern">
 <div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
@@ -37,7 +37,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 <div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas></section>
 <section class="card"><h2>LEDs</h2><small>18 LEDs · 60/m · LED #1 offset 80 mm · up to 10 active</small><button id="add">Add LED</button><div id="leds"></div></section></div>
 <div class="card"><h2>Pattern files</h2>
-<button class="primary" id="export">Export JSON</button>
+<button class="primary" id="export">Export JSON (v1)</button><button id="exportV2">Export Pattern v2</button>
 <button id="importButton">Open JSON</button>
 <input id="importFile" type="file" accept=".json,application/json" hidden>
 <button id="reset">New Pattern</button>
@@ -48,6 +48,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 const LED_COUNT=18,OFFSET=80,SPACING=1000/60,MAX_ACTIVE=10;
 const $=id=>document.getElementById(id);
 let leds=[{index:1,color:"#ff0000",brightness:40}];
+let preservedEvents=[],preservedOffset=0,preservedDirection="cw";
 function message(text,error=false){$("status").textContent=text;$("status").className=error?"error":"";}
 function renderLEDs(){
  const root=$("leds");root.replaceChildren();
@@ -127,11 +128,26 @@ function validate(p){
   used.add(l.index);
  }
 }
+function convertV2(p){
+ if(!p||p.schemaVersion!==2||p.type!=="pattern")throw Error("Not a version 2 pattern");
+ const m=p.motion,a=p.referenceLedArm;
+ if(!m||!a||!Array.isArray(p.events)||!Array.isArray(p.leds))throw Error("Incomplete version 2 pattern");
+ if(!["cw","ccw"].includes(m.direction)||!Number.isFinite(m.offsetAngleDeg)||Math.abs(m.offsetAngleDeg)>360)throw Error("Invalid offset or direction");
+ if(a.ledCount!==LED_COUNT||Math.abs(a.offsetMm-OFFSET)>0.1||Math.abs(a.spacingMm-SPACING)>0.1)throw Error("Reference LED arm is incompatible with the current designer");
+ const legacy={schemaVersion:1,name:p.name,mode:m.mode,symmetry:m.symmetry,revolutions:m.revolutions,mainRadiusMm:p.designRadiusMm,exposureSeconds:Number($("exposure").value),ledArm:{ledCount:LED_COUNT,offsetMm:OFFSET,spacingMm:SPACING},leds:p.leds};
+ validate(legacy);
+ return legacy;
+}
+function exportV2(){
+ const p=pattern();validate(p);
+ return {schemaVersion:2,type:"pattern",name:p.name,designRadiusMm:p.mainRadiusMm,referenceLedArm:{...p.ledArm},motion:{mode:p.mode,symmetry:p.symmetry,revolutions:p.revolutions,direction:preservedDirection,offsetAngleDeg:preservedOffset},leds:p.leds,events:JSON.parse(JSON.stringify(preservedEvents))};
+}
 function load(p){
  validate(p);
  $("name").value=p.name;$("mode").value=p.mode;$("s").value=p.symmetry;$("r").value=p.revolutions;
  $("radius").value=p.mainRadiusMm;$("exposure").value=p.exposureSeconds;
  leds=p.leds.map(l=>({index:l.index,color:l.color,brightness:l.brightness}));
+ preservedEvents=[];preservedOffset=0;preservedDirection="cw";
  renderLEDs();draw();
 }
 $("add").onclick=()=>{if(leds.length>=MAX_ACTIVE)return;const used=new Set(leds.map(l=>l.index));let i=1;while(used.has(i))i++;leds.unshift({index:i,color:"#ffffff",brightness:40});renderLEDs();draw();};
@@ -150,6 +166,7 @@ $("reset").onclick=()=>{if(!confirm("Start a new pattern? Unsaved changes will b
 $("export").onclick=()=>{
  try{
   const p=pattern();validate(p);
+  if(preservedEvents.length||preservedOffset!==0||preservedDirection!=="cw")throw Error("Version 1 cannot preserve advanced events or offset. Export v2 instead.");
   const blob=new Blob([JSON.stringify(p,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");
   link.href=url;link.download=(p.name.replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,48)||"pattern")+".json";
@@ -157,10 +174,25 @@ $("export").onclick=()=>{
   message("Export requested. Save the JSON file using your device's download controls.");
  }catch(e){message(e.message,true);}
 };
+$("exportV2").onclick=()=>{
+ try{
+  const p=exportV2(),blob=new Blob([JSON.stringify(p,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),link=document.createElement("a");
+  link.href=url;link.download=(p.name.replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,48)||"pattern")+"-v2.json";
+  document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  message("Version 2 pattern export requested. Current SpiraLight firmware requires v1.");
+ }catch(e){message(e.message,true);}
+};
 $("importButton").onclick=()=>$("importFile").click();
 $("importFile").onchange=async e=>{
  const file=e.target.files[0];if(!file)return;
- try{if(file.size>2500)throw Error("File exceeds 2500 bytes");load(JSON.parse(await file.text()));message("Pattern opened for editing");}
+ try{if(file.size>30000)throw Error("File exceeds 30000 bytes");
+  const p=JSON.parse(await file.text());
+  if(p.schemaVersion===2){
+   const converted=convertV2(p);load(converted);
+   preservedEvents=JSON.parse(JSON.stringify(p.events));preservedOffset=p.motion.offsetAngleDeg;preservedDirection=p.motion.direction;
+   message(preservedEvents.length||preservedOffset!==0||preservedDirection!=="cw"?"Version 2 opened; advanced features preserved but not shown in preview.":"Version 2 pattern opened.");
+  }else{load(p);message("Version 1 pattern opened.");}}
  catch(err){message("Cannot open pattern: "+err.message,true);}
  finally{e.target.value="";}
 };
