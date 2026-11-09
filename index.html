@@ -25,7 +25,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.8</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.9</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="r">Closure revolutions / denominator (R)</label><div class="stepper"><button type="button" data-field="r" data-delta="-5" aria-label="Decrease Closure revolutions / denominator (R) by 5">−5</button><button type="button" data-field="r" data-delta="-1" aria-label="Decrease Closure revolutions / denominator (R) by 1">−1</button><input id="r" type="number" min="1" max="100" step="1" inputmode="numeric" value="3"><button type="button" data-field="r" data-delta="1" aria-label="Increase Closure revolutions / denominator (R) by 1">+1</button><button type="button" data-field="r" data-delta="5" aria-label="Increase Closure revolutions / denominator (R) by 5">+5</button></div></div>
@@ -51,10 +51,10 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 <div class="row"><label for="arm2File">LED Arm 2</label><button type="button" id="chooseArm2">Load Pattern v2</button><button type="button" id="clearArm2">Clear</button></div>
 <div class="row"><label for="arm2Radius">Arm 2 Main Arm radius (mm)</label><input id="arm2Radius" type="number" min="1" max="2000" step="1" inputmode="numeric" value="500"></div>
 <input id="arm2File" type="file" accept=".json,application/json" hidden>
-<div class="row"><button type="button" id="editArm2">Edit Arm 2 in Pattern editor</button><button type="button" id="applyArm2" hidden>Apply Arm 2 changes</button><button type="button" id="cancelArm2" hidden>Cancel Arm 2 editing</button></div><small id="editorArmStatus"></small><small id="arm2Status">No second-arm pattern loaded</small>
+<div class="row"><button type="button" id="editArm2">Edit Arm 2 in Pattern editor</button><button type="button" id="applyArm2" hidden>Apply Arm 2 changes</button><button type="button" id="cancelArm2" hidden>Cancel Arm 2 editing</button></div><small id="editorArmStatus"></small><small id="arm2Status">No second-arm pattern loaded</small><div class="row"><span>Composition Main Arm speed</span><strong id="compositionRPM">—</strong></div><small id="compositionTiming"></small>
 <canvas id="compositionPreview" width="600" height="600" aria-label="Combined composition preview"></canvas>
 <div class="row"><button class="primary" type="button" id="exportComposition">Export Composition v2</button><button type="button" id="openComposition">Open Composition v2</button></div><input id="compositionFile" type="file" accept=".json,application/json" hidden>
-<small>Only compatible patterns can be combined. This preview does not yet simulate lighting events or the physical motion controller.</small>
+<small>Each Pattern completes once; the shorter Pattern turns its LEDs off while the Main Arm continues. This preview does not yet simulate lighting events or the physical motion controller.</small>
 </div>
 <script>
 "use strict";
@@ -132,8 +132,8 @@ function previewColor(hex){
 function draw(){
  updateSuggestedName();
  const s=Number($("s").value),r=Number($("r").value),radius=Number($("radius").value),exposure=Number($("exposure").value);
- $("mainPeriod").textContent=exposure>0&&r>0?(exposure/r).toFixed(2)+" s/rev":"—";
- $("ledPeriod").textContent=exposure>0&&s>0?(exposure/s).toFixed(2)+" s/rev":"—";
+ $("mainPeriod").textContent=exposure>0&&r>0?(60*r/exposure).toFixed(2)+" RPM":"—";
+ $("ledPeriod").textContent=exposure>0&&s>0?(60*s/exposure).toFixed(2)+" RPM":"—";
  const canvas=$("preview"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,600,600);
  if(![s,r,radius].every(n=>Number.isFinite(n)&&n>0)||!leds.length)return;
  const maxD=OFFSET+(LED_COUNT-1)*SPACING;
@@ -242,10 +242,13 @@ function drawComposition(){
  if(!Number.isFinite(radius)||radius<=0||radius>2000||!Number.isInteger(rev)||rev<1)return;
  let arm1;try{arm1=exportV2();}catch(e){$("exportComposition").disabled=true;return;}
  const patterns=[arm1EditingBackup?arm1EditingBackup.pattern:arm1,arm1EditingBackup?arm1:arm2Pattern].filter(Boolean);
- const compatible=patterns.every(p=>p.motion.revolutions===rev&&p.leds.every(l=>l.index<=p.referenceLedArm.ledCount))&&(!arm2Pattern||(Number.isFinite(radius2)&&radius2>=1&&radius2<=2000));
+ const compatible=patterns.every(p=>p.leds.every(l=>l.index<=p.referenceLedArm.ledCount))&&(!arm2Pattern||(Number.isFinite(radius2)&&radius2>=1&&radius2<=2000));
  $("exportComposition").disabled=!compatible||!!arm1EditingBackup;
- if(!compatible){$("arm2Status").textContent="Arm 2 incompatible: Main Arm revolutions must match Arm 1.";return;}
+ if(!compatible){$("arm2Status").textContent="Arm 2 incompatible: check LED indices and radius.";$("compositionRPM").textContent="—";$("compositionTiming").textContent="";return;}
  if(arm2Pattern&&!arm1EditingBackup)$("arm2Status").textContent="Loaded: "+arm2Pattern.name+" ("+arm2Pattern.motion.revolutions+" main revolutions)";
+ const totalRev=Math.max(...patterns.map(p=>p.motion.revolutions)),exposure=Number($("exposure").value);
+ $("compositionRPM").textContent=exposure>0?(60*totalRev/exposure).toFixed(2)+" RPM":"—";
+ $("compositionTiming").textContent=exposure>0?patterns.map((p,i)=>"Arm "+(i+1)+": "+(exposure*p.motion.revolutions/totalRev).toFixed(2)+" s drawing, then LEDs off").join(" · "):"";
  const reach=Math.max(...patterns.map((p,i)=>(i===0?radius:radius2)+p.referenceLedArm.offsetMm+(p.referenceLedArm.ledCount-1)*p.referenceLedArm.spacingMm));
  const scale=270/reach;
  patterns.forEach((p,armIndex)=>{
@@ -254,7 +257,7 @@ function drawComposition(){
    const d=a.offsetMm+(led.index-1)*a.spacingMm;
    ctx.beginPath();
    for(let i=0;i<=2000;i++){
-    const t=i/2000,x=2*Math.PI*rev*t+phase,y=2*Math.PI*m.symmetry*t;
+    const t=i/2000,x=2*Math.PI*m.revolutions*t+phase,y=2*Math.PI*m.symmetry*t;
     const direction=m.direction==="ccw"?-1:1;
     const angle=(m.mode==="symmetry"?x-direction*y:x+direction*y)+m.offsetAngleDeg*Math.PI/180;
     const px=300+(armRadius*Math.cos(x)+d*Math.cos(angle))*scale;
@@ -303,7 +306,6 @@ $("applyArm2").onclick=()=>{
  if(!arm1EditingBackup)return;
  try{
   const edited=exportV2(),arm1=arm1EditingBackup;
-  if(edited.motion.revolutions!==arm1.pattern.motion.revolutions)throw Error("Arm 2 must use the same Main Arm revolutions as Arm 1");
   const radius2=Number($("radius").value);
   if(!Number.isFinite(radius2)||radius2<1||radius2>2000)throw Error("Invalid Arm 2 radius");
   arm2Pattern=edited;$("arm2Radius").value=radius2;
@@ -327,7 +329,6 @@ $("arm2File").onchange=async e=>{
   if(file.size>30000)throw Error("File too large");
   const p=JSON.parse(await file.text());
   convertV2(p);
-  if(p.motion.revolutions!==Number($("r").value))throw Error("Main Arm revolutions differ from Arm 1");
   arm2Pattern=p;$("arm2Radius").value=p.designRadiusMm;drawComposition();message("Arm 2 pattern loaded.");
  }catch(err){message("Cannot assign Arm 2: "+err.message,true);}
  finally{e.target.value="";}
@@ -347,8 +348,8 @@ $("compositionFile").onchange=async e=>{
    if(!Number.isFinite(arm.mainRadiusMm)||arm.mainRadiusMm<1||arm.mainRadiusMm>2000)throw Error("Invalid arm radius");
    convertV2(arm.pattern);
   }
-  if(second&&first.pattern.motion.revolutions!==second.pattern.motion.revolutions)throw Error("Arm revolutions do not match");
-  if(c.mainArmRevolutions!==undefined&&c.mainArmRevolutions!==first.pattern.motion.revolutions)throw Error("Composition revolutions do not match");
+  const maxRevolutions=Math.max(...c.arms.map(arm=>arm.pattern.motion.revolutions));
+  if(c.mainArmRevolutions!==undefined&&c.mainArmRevolutions!==maxRevolutions)throw Error("Composition revolutions do not match the longest Pattern");
   const converted=convertV2(first.pattern);
   converted.mainRadiusMm=first.mainRadiusMm;
   converted.exposureSeconds=c.exposureSeconds;
@@ -369,11 +370,10 @@ $("exportComposition").onclick=()=>{
  try{
   const p1=exportV2(),radius=Number($("radius").value),radius2=Number($("arm2Radius").value),exposure=Number($("exposure").value);
   if(!Number.isFinite(radius)||radius<1||radius>2000||!Number.isFinite(exposure)||exposure<0.1||exposure>3600)throw Error("Invalid Composition radius or exposure");
-  if(arm2Pattern&&arm2Pattern.motion.revolutions!==p1.motion.revolutions)throw Error("Main Arm revolutions differ");
   if(arm2Pattern&&(!Number.isFinite(radius2)||radius2<1||radius2>2000))throw Error("Invalid Arm 2 radius");
   const name=$("compositionName").value.trim();
   if(!name||name.length>48)throw Error("Enter a Composition name");
-  const composition={schemaVersion:2,type:"composition",name,mainArmRevolutions:p1.motion.revolutions,exposureSeconds:exposure,
+  const composition={schemaVersion:2,type:"composition",name,mainArmRevolutions:Math.max(p1.motion.revolutions,arm2Pattern?arm2Pattern.motion.revolutions:0),exposureSeconds:exposure,
    arms:[{armId:"arm1",mainRadiusMm:radius,pattern:p1},...(arm2Pattern?[{armId:"arm2",mainRadiusMm:radius2,pattern:arm2Pattern}]:[])]};
   const blob=new Blob([JSON.stringify(composition,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");
@@ -382,7 +382,7 @@ $("exportComposition").onclick=()=>{
   message("Composition v2 export requested.");
  }catch(err){message("Cannot export Composition: "+err.message,true);}
 };
-const DESIGNER_VERSION="0.6.8";
+const DESIGNER_VERSION="0.6.9";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
