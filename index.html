@@ -25,7 +25,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.5</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.6</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="r">Closure revolutions / denominator (R)</label><div class="stepper"><button type="button" data-field="r" data-delta="-5" aria-label="Decrease Closure revolutions / denominator (R) by 5">−5</button><button type="button" data-field="r" data-delta="-1" aria-label="Decrease Closure revolutions / denominator (R) by 1">−1</button><input id="r" type="number" min="1" max="100" step="1" inputmode="numeric" value="3"><button type="button" data-field="r" data-delta="1" aria-label="Increase Closure revolutions / denominator (R) by 1">+1</button><button type="button" data-field="r" data-delta="5" aria-label="Increase Closure revolutions / denominator (R) by 5">+5</button></div></div>
@@ -101,6 +101,18 @@ function renderLEDs(){
 function suggestedPatternName(){return ($("mode").value==="symmetry"?"SYM":"CR")+"-S"+$("s").value+"-R"+$("r").value;}
 function updateSuggestedName(){$("suggestedPatternName").textContent=suggestedPatternName();}
 $("useSuggestedName").onclick=()=>{$("name").value=suggestedPatternName();message("Suggested name applied. You can edit it before exporting.");};
+// Preview-only visibility curve. Exported LED brightness is never modified.
+function previewOpacity(brightness){
+ const b=Math.max(0,Math.min(100,Number(brightness)));
+ const stops=[[0,0],[5,0.40],[10,0.55],[20,0.70],[40,0.85],[100,1]];
+ for(let i=1;i<stops.length;i++){
+  if(b<=stops[i][0]){
+   const [x0,y0]=stops[i-1],[x1,y1]=stops[i];
+   return y0+(b-x0)*(y1-y0)/(x1-x0);
+  }
+ }
+ return 1;
+}
 function draw(){
  updateSuggestedName();
  const s=Number($("s").value),r=Number($("r").value),radius=Number($("radius").value),exposure=Number($("exposure").value);
@@ -120,7 +132,7 @@ function draw(){
    const y=300-(radius*Math.sin(xAngle)+d*Math.sin(angle))*scale;
    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   }
-  ctx.strokeStyle=led.color;ctx.globalAlpha=led.brightness/100;ctx.lineWidth=2;ctx.stroke();
+  ctx.strokeStyle=led.color;ctx.globalAlpha=previewOpacity(led.brightness);ctx.lineWidth=2;ctx.stroke();
  });
  ctx.globalAlpha=1;
  drawComposition();
@@ -233,7 +245,7 @@ function drawComposition(){
     const py=300-(armRadius*Math.sin(x)+d*Math.sin(angle))*scale;
     if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
    }
-   ctx.strokeStyle=led.color;ctx.globalAlpha=led.brightness/100;ctx.lineWidth=2;ctx.stroke();
+   ctx.strokeStyle=led.color;ctx.globalAlpha=previewOpacity(led.brightness);ctx.lineWidth=2;ctx.stroke();
   });
  });
  ctx.globalAlpha=1;
@@ -354,7 +366,7 @@ $("exportComposition").onclick=()=>{
   message("Composition v2 export requested.");
  }catch(err){message("Cannot export Composition: "+err.message,true);}
 };
-const DESIGNER_VERSION="0.6.5";
+const DESIGNER_VERSION="0.6.6";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
