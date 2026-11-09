@@ -25,12 +25,13 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.10</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.11</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="r">Closure revolutions / denominator (R)</label><div class="stepper"><button type="button" data-field="r" data-delta="-5" aria-label="Decrease Closure revolutions / denominator (R) by 5">−5</button><button type="button" data-field="r" data-delta="-1" aria-label="Decrease Closure revolutions / denominator (R) by 1">−1</button><input id="r" type="number" min="1" max="100" step="1" inputmode="numeric" value="3"><button type="button" data-field="r" data-delta="1" aria-label="Increase Closure revolutions / denominator (R) by 1">+1</button><button type="button" data-field="r" data-delta="5" aria-label="Increase Closure revolutions / denominator (R) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="radius">Main Arm radius (mm)</label><div class="stepper"><button type="button" data-field="radius" data-delta="-10" aria-label="Decrease radius by 10">−10</button><button type="button" data-field="radius" data-delta="-1" aria-label="Decrease radius by 1">−1</button><input id="radius" type="number" min="1" max="2000" step="1" inputmode="numeric" value="380"><button type="button" data-field="radius" data-delta="1" aria-label="Increase radius by 1">+1</button><button type="button" data-field="radius" data-delta="10" aria-label="Increase radius by 10">+10</button></div></div>
 <div class="row parameter-row"><label for="exposure">Exposure (seconds)</label><div class="stepper"><button type="button" data-field="exposure" data-delta="-10" aria-label="Decrease exposure by 10 seconds">−10</button><button type="button" data-field="exposure" data-delta="-1" aria-label="Decrease exposure by 1 second">−1</button><input id="exposure" type="number" min="0.1" max="3600" step="0.1" inputmode="decimal" value="20"><button type="button" data-field="exposure" data-delta="1" aria-label="Increase exposure by 1 second">+1</button><button type="button" data-field="exposure" data-delta="10" aria-label="Increase exposure by 10 seconds">+10</button></div></div>
+<div class="row"><label for="startAngle">LED Arm starting angle (degrees)</label><input id="startAngle" type="number" min="-360" max="360" step="1" inputmode="decimal" value="0"></div>
 <div class="row"><span>Main Arm speed</span><strong id="mainPeriod"></strong></div>
 <div class="row"><span>LED Arm speed</span><strong id="ledPeriod"></strong></div></div>
 <div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas></section>
@@ -131,7 +132,7 @@ function previewColor(hex){
 }
 function draw(){
  updateSuggestedName();
- const s=Number($("s").value),r=Number($("r").value),radius=Number($("radius").value),exposure=Number($("exposure").value);
+ const s=Number($("s").value),r=Number($("r").value),radius=Number($("radius").value),exposure=Number($("exposure").value),startAngle=Number($("startAngle").value)*Math.PI/180;
  $("mainPeriod").textContent=exposure>0&&r>0?(60*r/exposure).toFixed(2)+" RPM":"—";
  $("ledPeriod").textContent=exposure>0&&s>0?(60*s/exposure).toFixed(2)+" RPM":"—";
  const canvas=$("preview"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,600,600);
@@ -143,7 +144,7 @@ function draw(){
   ctx.beginPath();
   for(let i=0;i<=2000;i++){
    const t=i/2000,xAngle=2*Math.PI*r*t,yAngle=2*Math.PI*s*t;
-   const angle=symmetry?xAngle-yAngle:xAngle+yAngle;
+   const angle=(symmetry?xAngle-yAngle:xAngle+yAngle)+startAngle;
    const x=300+(radius*Math.cos(xAngle)+d*Math.cos(angle))*scale;
    const y=300-(radius*Math.sin(xAngle)+d*Math.sin(angle))*scale;
    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
@@ -189,7 +190,7 @@ function convertV2(p){
 }
 function exportV2(){
  const p=pattern();validate(p);
- return {schemaVersion:2,type:"pattern",name:p.name,designRadiusMm:p.mainRadiusMm,referenceLedArm:{...p.ledArm},motion:{mode:p.mode,symmetry:p.symmetry,revolutions:p.revolutions,direction:preservedDirection,offsetAngleDeg:preservedOffset},leds:p.leds,events:JSON.parse(JSON.stringify(preservedEvents))};
+ return {schemaVersion:2,type:"pattern",name:p.name,designRadiusMm:p.mainRadiusMm,referenceLedArm:{...p.ledArm},motion:{mode:p.mode,symmetry:p.symmetry,revolutions:p.revolutions,direction:preservedDirection,offsetAngleDeg:Number($("startAngle").value)},leds:p.leds,events:JSON.parse(JSON.stringify(preservedEvents))};
 }
 function load(p){
  validate(p);
@@ -197,7 +198,7 @@ function load(p){
  $("radius").value=p.mainRadiusMm;$("exposure").value=p.exposureSeconds;
  nextLedLabel=1;
  leds=p.leds.map(l=>({index:l.index,color:l.color,brightness:l.brightness,labelId:nextLedLabel++}));
- preservedEvents=[];preservedOffset=0;preservedDirection="cw";
+ preservedEvents=[];preservedOffset=0;preservedDirection="cw";$("startAngle").value=0;
  renderLEDs();draw();
 }
 $("add").onclick=()=>{if(leds.length>=MAX_ACTIVE)return;const used=new Set(leds.map(l=>l.index));let i=1;while(used.has(i))i++;leds.unshift({index:i,color:"#ffffff",brightness:40,labelId:nextLedLabel++});renderLEDs();draw();};
@@ -211,7 +212,7 @@ document.querySelectorAll("button[data-field][data-delta]").forEach(button=>{
   draw();
  };
 });
-for(const id of ["mode","s","r","radius","exposure"])$(id).addEventListener("input",draw);
+for(const id of ["mode","s","r","radius","exposure","startAngle"])$(id).addEventListener("input",draw);
 $("reset").onclick=()=>{if(!confirm("Start a new pattern? Unsaved changes will be lost."))return;load({schemaVersion:1,name:"New Pattern",mode:"symmetry",symmetry:5,revolutions:3,mainRadiusMm:380,exposureSeconds:20,ledArm:{ledCount:18,offsetMm:80,spacingMm:SPACING},leds:[{index:1,color:"#ff0000",brightness:40}]});message("New pattern ready");};
 $("exportV2").onclick=()=>{
  try{
@@ -229,8 +230,8 @@ $("importFile").onchange=async e=>{
   const p=JSON.parse(await file.text());
   if(p.schemaVersion===2){
    const converted=convertV2(p);load(converted);
-   preservedEvents=JSON.parse(JSON.stringify(p.events));preservedOffset=p.motion.offsetAngleDeg;preservedDirection=p.motion.direction;
-   message(preservedEvents.length||preservedOffset!==0||preservedDirection!=="cw"?"Version 2 opened; advanced features preserved but not shown in preview.":"Version 2 pattern opened.");
+   preservedEvents=JSON.parse(JSON.stringify(p.events));preservedOffset=p.motion.offsetAngleDeg;$("startAngle").value=preservedOffset;preservedDirection=p.motion.direction;draw();
+   message(preservedEvents.length||preservedOffset!==0||preservedDirection!=="cw"?"Version 2 opened; advanced events preserved but not shown in preview.":"Version 2 pattern opened.");
   }else{load(p);message("Version 1 pattern opened.");}}
  catch(err){message("Cannot open pattern: "+err.message,true);}
  finally{e.target.value="";}
@@ -257,9 +258,9 @@ function drawComposition(){
    const d=a.offsetMm+(led.index-1)*a.spacingMm;
    ctx.beginPath();
    for(let i=0;i<=2000;i++){
-    const t=i/2000,x=2*Math.PI*m.revolutions*t+phase,y=2*Math.PI*m.symmetry*t;
+    const t=i/2000,mainAngle=2*Math.PI*m.revolutions*t,x=mainAngle+phase,y=2*Math.PI*m.symmetry*t;
     const direction=m.direction==="ccw"?-1:1;
-    const angle=(m.mode==="symmetry"?x-direction*y:x+direction*y)+m.offsetAngleDeg*Math.PI/180;
+    const angle=(m.mode==="symmetry"?mainAngle-direction*y:mainAngle+direction*y)+m.offsetAngleDeg*Math.PI/180;
     const px=300+(armRadius*Math.cos(x)+d*Math.cos(angle))*scale;
     const py=300-(armRadius*Math.sin(x)+d*Math.sin(angle))*scale;
     if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
@@ -279,7 +280,7 @@ function restoreEditor(snapshot,radius){
  converted.exposureSeconds=snapshot.exposure;
  load(converted);
  preservedEvents=JSON.parse(JSON.stringify(snapshot.pattern.events));
- preservedOffset=snapshot.pattern.motion.offsetAngleDeg;
+ preservedOffset=snapshot.pattern.motion.offsetAngleDeg;$("startAngle").value=preservedOffset;
  preservedDirection=snapshot.pattern.motion.direction;
  draw();
 }
@@ -364,7 +365,7 @@ $("compositionFile").onchange=async e=>{
   validate(converted);
   load(converted);
   preservedEvents=JSON.parse(JSON.stringify(first.pattern.events));
-  preservedOffset=first.pattern.motion.offsetAngleDeg;
+  preservedOffset=first.pattern.motion.offsetAngleDeg;$("startAngle").value=preservedOffset;
   preservedDirection=first.pattern.motion.direction;
   $("compositionName").value=c.name;
   arm2Pattern=second?JSON.parse(JSON.stringify(second.pattern)):null;
@@ -390,7 +391,7 @@ $("exportComposition").onclick=()=>{
   message("Composition v2 export requested.");
  }catch(err){message("Cannot export Composition: "+err.message,true);}
 };
-const DESIGNER_VERSION="0.6.10";
+const DESIGNER_VERSION="0.6.11";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
