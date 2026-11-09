@@ -25,9 +25,8 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.4</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
-<div class="card"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern">
-<div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.5</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<div class="card"><div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="r">Closure revolutions / denominator (R)</label><div class="stepper"><button type="button" data-field="r" data-delta="-5" aria-label="Decrease Closure revolutions / denominator (R) by 5">−5</button><button type="button" data-field="r" data-delta="-1" aria-label="Decrease Closure revolutions / denominator (R) by 1">−1</button><input id="r" type="number" min="1" max="100" step="1" inputmode="numeric" value="3"><button type="button" data-field="r" data-delta="1" aria-label="Increase Closure revolutions / denominator (R) by 1">+1</button><button type="button" data-field="r" data-delta="5" aria-label="Increase Closure revolutions / denominator (R) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="radius">Main Arm radius (mm)</label><div class="stepper"><button type="button" data-field="radius" data-delta="-10" aria-label="Decrease radius by 10">−10</button><button type="button" data-field="radius" data-delta="-1" aria-label="Decrease radius by 1">−1</button><input id="radius" type="number" min="1" max="2000" step="1" inputmode="numeric" value="380"><button type="button" data-field="radius" data-delta="1" aria-label="Increase radius by 1">+1</button><button type="button" data-field="radius" data-delta="10" aria-label="Increase radius by 10">+10</button></div></div>
@@ -37,6 +36,8 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 <div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas></section>
 <section class="card"><h2>LEDs</h2><small>18 LEDs · 60/m · LED #1 offset 80 mm · up to 10 active</small><button id="add">Add LED</button><div id="leds"></div></section></div>
 <div class="card"><h2>Pattern files</h2>
+<div class="row"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern"></div>
+<div class="row"><small>Suggested name: <strong id="suggestedPatternName"></strong></small><button type="button" id="useSuggestedName">Use suggested name</button></div>
 <button class="primary" id="exportV2">Export Pattern v2</button>
 <button id="importButton">Open JSON</button>
 <input id="importFile" type="file" accept=".json,application/json" hidden>
@@ -97,7 +98,11 @@ function renderLEDs(){
  });
  $("add").disabled=leds.length>=MAX_ACTIVE;
 }
+function suggestedPatternName(){return ($("mode").value==="symmetry"?"SYM":"CR")+"-S"+$("s").value+"-R"+$("r").value;}
+function updateSuggestedName(){$("suggestedPatternName").textContent=suggestedPatternName();}
+$("useSuggestedName").onclick=()=>{$("name").value=suggestedPatternName();message("Suggested name applied. You can edit it before exporting.");};
 function draw(){
+ updateSuggestedName();
  const s=Number($("s").value),r=Number($("r").value),radius=Number($("radius").value),exposure=Number($("exposure").value);
  $("mainPeriod").textContent=exposure>0&&r>0?(exposure/r).toFixed(2)+" s/rev":"—";
  $("ledPeriod").textContent=exposure>0&&s>0?(exposure/s).toFixed(2)+" s/rev":"—";
@@ -184,7 +189,7 @@ $("exportV2").onclick=()=>{
  try{
   const p=exportV2(),blob=new Blob([JSON.stringify(p,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");
-  link.href=url;link.download=(p.name.replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,48)||"pattern")+"-v2.json";
+  link.href=url;link.download=(p.name.replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,48)||"pattern")+"-pat-v2.json";
   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
   message("Version 2 pattern export requested. Current SpiraLight firmware requires v1.");
  }catch(e){message(e.message,true);}
@@ -274,15 +279,17 @@ $("applyArm2").onclick=()=>{
   const radius2=Number($("radius").value);
   if(!Number.isFinite(radius2)||radius2<1||radius2>2000)throw Error("Invalid Arm 2 radius");
   arm2Pattern=edited;$("arm2Radius").value=radius2;
-  restoreEditor(arm1);
-  arm1EditingBackup=null;setArm2Editing(false);drawComposition();
+  arm1EditingBackup=null;
+  restoreEditor(arm1);setArm2Editing(false);drawComposition();
   message("Arm 2 changes applied to Composition. Export to save them.");
  }catch(e){message("Cannot apply Arm 2: "+e.message,true);}
 };
 $("cancelArm2").onclick=()=>{
  if(!arm1EditingBackup)return;
- restoreEditor(arm1EditingBackup);arm1EditingBackup=null;setArm2Editing(false);
- message("Arm 2 editing canceled.");
+ const original=arm1EditingBackup;
+ arm1EditingBackup=null;
+ restoreEditor(original);setArm2Editing(false);drawComposition();
+ message("Arm 2 editing canceled; original Composition restored.");
 };
 $("chooseArm2").onclick=()=>$("arm2File").click();
 $("clearArm2").onclick=()=>{arm2Pattern=null;$("arm2Status").textContent="No second-arm pattern loaded";drawComposition();};
@@ -342,12 +349,12 @@ $("exportComposition").onclick=()=>{
    arms:[{armId:"arm1",mainRadiusMm:radius,pattern:p1},...(arm2Pattern?[{armId:"arm2",mainRadiusMm:radius2,pattern:arm2Pattern}]:[])]};
   const blob=new Blob([JSON.stringify(composition,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");
-  link.href=url;link.download=(name.replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,48)||"composition")+"-v2.json";
+  link.href=url;link.download=(name.replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,48)||"composition")+"-cmp-v2.json";
   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
   message("Composition v2 export requested.");
  }catch(err){message("Cannot export Composition: "+err.message,true);}
 };
-const DESIGNER_VERSION="0.6.4";
+const DESIGNER_VERSION="0.6.5";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
