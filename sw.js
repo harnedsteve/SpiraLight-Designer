@@ -1,4 +1,4 @@
-const CACHE="spiralight-designer-v16";
+const CACHE="spiralight-designer-v17";
 const ASSETS=["./index.html","./manifest.webmanifest","./icon.svg"];
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
