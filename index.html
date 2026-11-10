@@ -184,13 +184,13 @@ function convertV2(p){
  if(!m||!a||!Array.isArray(p.events)||!Array.isArray(p.leds))throw Error("Incomplete version 2 pattern");
  if(!["cw","ccw"].includes(m.direction)||!Number.isFinite(m.offsetAngleDeg)||Math.abs(m.offsetAngleDeg)>360)throw Error("Invalid offset or direction");
  if(a.ledCount!==LED_COUNT||Math.abs(a.offsetMm-OFFSET)>0.1||Math.abs(a.spacingMm-SPACING)>0.1)throw Error("Reference LED arm is incompatible with the current designer");
- const legacy={schemaVersion:1,name:p.name,mode:m.mode,symmetry:m.symmetry,revolutions:m.revolutions,mainRadiusMm:p.designRadiusMm,exposureSeconds:Number($("exposure").value),ledArm:{ledCount:LED_COUNT,offsetMm:OFFSET,spacingMm:SPACING},leds:p.leds};
+ const legacy={schemaVersion:1,name:p.name,mode:m.mode,symmetry:m.symmetry,revolutions:m.revolutions,mainRadiusMm:p.designRadiusMm,exposureSeconds:(p.exposureSeconds === undefined ? Number($("exposure").value) : p.exposureSeconds),ledArm:{ledCount:LED_COUNT,offsetMm:OFFSET,spacingMm:SPACING},leds:p.leds};
  validate(legacy);
  return legacy;
 }
 function exportV2(){
  const p=pattern();validate(p);
- return {schemaVersion:2,type:"pattern",name:p.name,designRadiusMm:p.mainRadiusMm,referenceLedArm:{...p.ledArm},motion:{mode:p.mode,symmetry:p.symmetry,revolutions:p.revolutions,direction:preservedDirection,offsetAngleDeg:Number($("startAngle").value)},leds:p.leds,events:JSON.parse(JSON.stringify(preservedEvents))};
+ return {schemaVersion:2,type:"pattern",name:p.name,designRadiusMm:p.mainRadiusMm,exposureSeconds:p.exposureSeconds,referenceLedArm:{...p.ledArm},motion:{mode:p.mode,symmetry:p.symmetry,revolutions:p.revolutions,direction:preservedDirection,offsetAngleDeg:Number($("startAngle").value)},leds:p.leds,events:JSON.parse(JSON.stringify(preservedEvents))};
 }
 function load(p){
  validate(p);
@@ -231,7 +231,7 @@ $("importFile").onchange=async e=>{
   if(p.schemaVersion===2){
    const converted=convertV2(p);load(converted);
    preservedEvents=JSON.parse(JSON.stringify(p.events));preservedOffset=p.motion.offsetAngleDeg;$("startAngle").value=preservedOffset;preservedDirection=p.motion.direction;draw();
-   message(preservedEvents.length||preservedOffset!==0||preservedDirection!=="cw"?"Version 2 opened; advanced events preserved but not shown in preview.":"Version 2 pattern opened.");
+   message(p.exposureSeconds === undefined ? "Older version 2 pattern opened; exposure time was not stored in this file, so the current exposure setting was retained." : (preservedEvents.length||preservedOffset!==0||preservedDirection!=="cw" ? "Version 2 opened; advanced events preserved but not shown in preview." : "Version 2 pattern opened."));
   }else{load(p);message("Version 1 pattern opened.");}}
  catch(err){message("Cannot open pattern: "+err.message,true);}
  finally{e.target.value="";}
