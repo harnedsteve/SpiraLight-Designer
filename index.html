@@ -145,7 +145,8 @@ function draw(){
   for(let i=0;i<=2000;i++){
    const t=i/2000,xAngle=2*Math.PI*r*t,yAngle=2*Math.PI*s*t;
    const angle=(symmetry?xAngle-yAngle:xAngle+yAngle)+startAngle;
-   const x=300+(radius*Math.cos(xAngle)+d*Math.cos(angle))*scale;
+   // Camera-facing preview: mirror horizontal mathematical coordinates.
+    const x=300-(radius*Math.cos(xAngle)+d*Math.cos(angle))*scale;
    const y=300-(radius*Math.sin(xAngle)+d*Math.sin(angle))*scale;
    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   }
@@ -261,7 +262,7 @@ function drawComposition(){
     const t=i/2000,mainAngle=2*Math.PI*m.revolutions*t,x=mainAngle+phase,y=2*Math.PI*m.symmetry*t;
     const direction=m.direction==="ccw"?-1:1;
     const angle=(m.mode==="symmetry"?mainAngle-direction*y:mainAngle+direction*y)+m.offsetAngleDeg*Math.PI/180;
-    const px=300+(armRadius*Math.cos(x)+d*Math.cos(angle))*scale;
+    const px=300-(armRadius*Math.cos(x)+d*Math.cos(angle))*scale;
     const py=300-(armRadius*Math.sin(x)+d*Math.sin(angle))*scale;
     if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
    }
