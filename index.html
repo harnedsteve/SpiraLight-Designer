@@ -84,14 +84,14 @@ function effectColor(led,t){
 function moveLedEffects(oldIndex,newIndex){
  if(oldIndex===newIndex)return;
  for(const e of effects())if(e.ledIndex===oldIndex)e.ledIndex=newIndex;
- if($("effectLed").value===String(oldIndex))$("effectLed").value=String(newIndex);
+ // The selector is rebuilt after the LED index changes.
 }
 function removeLedEffects(index){
  preservedEvents=preservedEvents.filter(e=>e?.kind!==EFFECT_KIND||e.ledIndex!==index);
  if(selectedEffect&&selectedEffect.ledIndex===index)selectedEffect=null;
 }
-function refreshEffectUI(){
- const sel=$("effectLed"),old=sel.value;sel.replaceChildren();
+function refreshEffectUI(preferredIndex=null){
+ const sel=$("effectLed"),old=preferredIndex===null?sel.value:String(preferredIndex);sel.replaceChildren();
  for(const l of leds){const o=document.createElement("option");o.value=l.index;o.textContent="LED "+l.labelId+" (index "+l.index+")";sel.append(o);}
  if(leds.some(l=>String(l.index)===old))sel.value=old;else if(selectedEffect&&leds.some(l=>l.index===selectedEffect.ledIndex))sel.value=String(selectedEffect.ledIndex);
  $("effectStatus").textContent=" "+effects().length+" effects (v2 export only; firmware support pending)";
@@ -127,7 +127,7 @@ function renderLEDs(){
   heading.append(title,remove);div.append(heading);
   const index=document.createElement("input");index.type="range";index.min=1;index.max=LED_COUNT;index.value=led.index;
   const indexLabel=document.createElement("span");indexLabel.textContent="Index "+led.index;
-  index.oninput=()=>{const value=Number(index.value);if(leds.some((v,i)=>i!==pos&&v.index===value)){index.value=led.index;return;}moveLedEffects(led.index,value);led.index=value;indexLabel.textContent="Index "+value;refreshEffectUI();draw();};
+  index.oninput=()=>{const value=Number(index.value);if(leds.some((v,i)=>i!==pos&&v.index===value)){index.value=led.index;return;}moveLedEffects(led.index,value);led.index=value;indexLabel.textContent="Index "+value;refreshEffectUI(value);draw();};
   const indexRow=document.createElement("div");indexRow.className="index-controls";
   const minus=document.createElement("button");minus.type="button";minus.textContent="−";minus.setAttribute("aria-label","Previous LED index");
   const plus=document.createElement("button");plus.type="button";plus.textContent="+";plus.setAttribute("aria-label","Next LED index");
@@ -135,7 +135,7 @@ function renderLEDs(){
    let next=led.index+direction;
    while(next>=1&&next<=LED_COUNT&&leds.some((v,i)=>i!==pos&&v.index===next))next+=direction;
    if(next<1||next>LED_COUNT)return;
-   moveLedEffects(led.index,next);led.index=next;index.value=next;indexLabel.textContent="Index "+next;refreshEffectUI();draw();
+   moveLedEffects(led.index,next);led.index=next;index.value=next;indexLabel.textContent="Index "+next;refreshEffectUI(next);draw();
   }
   minus.onclick=()=>changeIndex(-1);plus.onclick=()=>changeIndex(1);
   indexRow.append(indexLabel,minus,index,plus);div.append(indexRow);
