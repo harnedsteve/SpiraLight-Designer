@@ -478,7 +478,5 @@ $("checkUpdates").onclick=async()=>{
  finally{button.disabled=false;}
 };
 renderLEDs();draw();
-if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
- window.addEventListener("load", () => /* Preview service worker disabled */
-}
+// Service worker registration intentionally disabled in experimental preview.
 </script></body></html>
