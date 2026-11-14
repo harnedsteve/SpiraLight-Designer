@@ -269,6 +269,16 @@ $("clearEffects").onclick=()=>{preservedEvents=preservedEvents.filter(e=>e?.kind
 for(const id of ["effectPosition","effectWidth","effectRepeat"])$(id).addEventListener("input",updateSelectedEffect);
 $("effectMinus").onclick=()=>{$("effectPosition").value=String(Math.max(0,Number($("effectPosition").value)-1));updateSelectedEffect();};
 $("effectPlus").onclick=()=>{$("effectPosition").value=String(Math.min(1000,Number($("effectPosition").value)+1));updateSelectedEffect();};
+$("effectLed").addEventListener("change",()=>{
+ const index=Number($("effectLed").value);
+ if(selectedEffect&&leds.some(led=>led.index===index)){
+  selectedEffect.ledIndex=index;
+  draw();
+  refreshEffectUI(index);
+ }else{
+  $("effectAdjustStatus").textContent="Tap the selected LED path to create an effect.";
+ }
+});
 $("effectColor").addEventListener("input",()=>{if(selectedEffect){selectedEffect.color=$("effectColor").value;draw();}});
 $("add").onclick=()=>{if(leds.length>=MAX_ACTIVE)return;const used=new Set(leds.map(l=>l.index));let i=1;while(used.has(i))i++;leds.unshift({index:i,color:"#ffffff",brightness:40,labelId:nextLedLabel++});renderLEDs();draw();};
 document.querySelectorAll("button[data-field][data-delta]").forEach(button=>{
