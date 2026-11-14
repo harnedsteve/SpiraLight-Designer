@@ -34,7 +34,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 <div class="row parameter-row"><label for="startAngle">LED Arm starting angle (degrees)</label><div class="stepper"><button type="button" data-field="startAngle" data-delta="-10" aria-label="Decrease LED Arm starting angle by 10 degrees">−10</button><button type="button" data-field="startAngle" data-delta="-1" aria-label="Decrease LED Arm starting angle by 1 degree">−1</button><input id="startAngle" type="number" min="-360" max="360" step="1" inputmode="decimal" value="0"><button type="button" data-field="startAngle" data-delta="1" aria-label="Increase LED Arm starting angle by 1 degree">+1</button><button type="button" data-field="startAngle" data-delta="10" aria-label="Increase LED Arm starting angle by 10 degrees">+10</button></div></div>
 <div class="row"><span>Main Arm speed</span><strong id="mainPeriod"></strong></div>
 <div class="row"><span>LED Arm speed</span><strong id="ledPeriod"></strong></div></div>
-<div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas><h3>Visual color effects (prototype)</h3><small>Choose an LED, then tap its path. The tap sets the center; adjust position and width below. Symmetry repeats the highlight on all petals. At crossings, refine the selection with the position slider.</small><div class="row"><label for="effectLed">LED</label><select id="effectLed"></select><label for="effectColor">Color</label><input id="effectColor" type="color" value="#00ffff"></div><div class="row"><label for="effectRepeat"><input id="effectRepeat" type="checkbox" checked> Apply to all petals</label></div><label for="effectPosition">Position along petal</label><div class="row"><button type="button" id="effectMinus">−</button><input id="effectPosition" type="range" min="0" max="1000" value="500" style="flex:1;min-width:110px"><button type="button" id="effectPlus">+</button></div><label for="effectWidth">Effect width</label><input id="effectWidth" type="range" min="2" max="400" value="80" style="width:100%"><div class="row"><small id="effectAdjustStatus">Tap a path to create an effect.</small></div><button type="button" id="undoEffect">Undo effect</button><button type="button" id="clearEffects">Clear effects</button><small id="effectStatus"></small></section>
+<div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas><h3>Visual color effects (prototype)</h3><small>Choose an LED, then tap its path. The tap sets the center; adjust position and width below. Symmetry repeats the highlight on all petals. At crossings, refine the selection with the position slider.</small><div class="row"><label for="effectLed">LED</label><select id="effectLed"></select><label for="effectColor">Color</label><input id="effectColor" type="color" value="#00ffff"></div><div class="row"><label for="effectRepeat"><input id="effectRepeat" type="checkbox" checked> Apply to all petals</label></div><label for="effectPosition">Position along petal</label><div class="row"><button type="button" id="effectMinus">−</button><input id="effectPosition" type="range" min="0" max="1000" value="500" style="flex:1;min-width:110px"><button type="button" id="effectPlus">+</button></div><label for="effectWidth">Effect width</label><input id="effectWidth" type="range" min="2" max="400" value="80" style="width:100%"><div class="row"><small id="effectAdjustStatus">Tap a path to create an effect.</small></div><label for="effectBrightness">Effect brightness: <output id="effectBrightnessValue">100%</output></label><input id="effectBrightness" type="range" min="0" max="100" value="100" style="width:100%"><small>0% or black turns the LED off during the effect.</small><button type="button" id="undoEffect">Undo effect</button><button type="button" id="clearEffects">Clear effects</button><small id="effectStatus"></small></section>
 <section class="card"><h2>LEDs</h2><small>18 LEDs · 60/m · LED #1 offset 80 mm · up to 10 active</small><button id="add">Add LED</button><div id="leds"></div></section></div>
 <div class="card"><h2>Pattern files</h2>
 <div class="row"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern"></div>
@@ -69,17 +69,17 @@ let selectedEffect=null;
 function effects(){return preservedEvents.filter(e=>e?.kind===EFFECT_KIND);}
 function wrapDistance(a,b){let d=Math.abs(a-b);return Math.min(d,1-d);}
 function effectColor(led,t){
- let color=led.color;
+ let color=led.color,brightness=led.brightness;
  const S=Math.max(1,Number($("s").value));
  const symmetric=$("mode").value==="symmetry";
  for(const e of effects()){
   if(e.ledIndex!==led.index)continue;
   const width=Number.isFinite(e.width)?e.width:0.04;
   if(e.repeat&&symmetric){
-   if(wrapDistance((t*S)%1,(e.position*S)%1)<=width*S/2)color=e.color;
-  }else if(Math.abs(t-e.position)<=width/2)color=e.color;
+   if(wrapDistance((t*S)%1,(e.position*S)%1)<=width*S/2){color=e.color;brightness=Number.isFinite(e.brightness)?e.brightness:led.brightness;}
+  }else if(Math.abs(t-e.position)<=width/2){color=e.color;brightness=Number.isFinite(e.brightness)?e.brightness:led.brightness;}
  }
- return color;
+ return {color,brightness:color.toLowerCase()==="#000000"?0:brightness};
 }
 function moveLedEffects(oldIndex,newIndex){
  if(oldIndex===newIndex)return;
@@ -102,8 +102,10 @@ function refreshEffectUI(preferredIndex=null){
   $("effectPosition").value=String(Math.round(((e.position%period)/period)*1000));
   $("effectWidth").value=String(Math.round(Math.min(400,Math.max(2,(e.width||0.04)/period*1000))));
   $("effectRepeat").checked=!!e.repeat;
+  $("effectBrightness").value=String(Number.isFinite(e.brightness)?e.brightness:100);
  }
  $("effectRepeat").disabled=$("mode").value!=="symmetry";
+ $("effectBrightnessValue").textContent=$("effectBrightness").value+"%";
 }
 function updateSelectedEffect(){
  const e=selectedEffect;if(!e)return;
@@ -196,8 +198,8 @@ function draw(){
    const t=i/2000,xAngle=2*Math.PI*r*t,yAngle=2*Math.PI*s*t;
    const angle=(symmetry?xAngle-yAngle:xAngle+yAngle)+startAngle;
    const point=[300-(radius*Math.cos(xAngle)+d*Math.cos(angle))*scale,300-(radius*Math.sin(xAngle)+d*Math.sin(angle))*scale];
-   const color=effectColor(led,t);
-   if(prev){ctx.beginPath();ctx.moveTo(...prev);ctx.lineTo(...point);ctx.strokeStyle=previewColor(color);ctx.globalAlpha=previewOpacity(led.brightness);ctx.lineWidth=2;ctx.stroke();}
+   const {color,brightness}=effectColor(led,t);
+   if(prev&&brightness>0){ctx.beginPath();ctx.moveTo(...prev);ctx.lineTo(...point);ctx.strokeStyle=previewColor(color);ctx.globalAlpha=previewOpacity(brightness);ctx.lineWidth=2;ctx.stroke();}
    prev=point;prevColor=color;
   }
  });
@@ -262,7 +264,7 @@ $("preview").addEventListener("click",ev=>{
  const dx=300-(radius*Math.cos(x)+d*Math.cos(a))*scale-px,dy=300-(radius*Math.sin(x)+d*Math.sin(a))*scale-py;
  const dist=dx*dx+dy*dy;if(dist<best){best=dist;position=t;}}
  if(best>324){$("effectStatus").textContent=" Tap closer to the selected LED path.";return;}
- const SCount=Math.max(1,Number($("s").value));selectedEffect={kind:EFFECT_KIND,ledIndex:led.index,position:Number(position.toFixed(6)),width:0.08/SCount,repeat:$("effectRepeat").checked&&symmetry,color:$("effectColor").value};preservedEvents.push(selectedEffect);draw();refreshEffectUI();
+ const SCount=Math.max(1,Number($("s").value));selectedEffect={kind:EFFECT_KIND,ledIndex:led.index,position:Number(position.toFixed(6)),width:0.08/SCount,repeat:$("effectRepeat").checked&&symmetry,color:$("effectColor").value,brightness:Number($("effectBrightness").value)};preservedEvents.push(selectedEffect);draw();refreshEffectUI();
 });
 $("undoEffect").onclick=()=>{for(let i=preservedEvents.length-1;i>=0;i--)if(preservedEvents[i]?.kind===EFFECT_KIND){{if(preservedEvents[i]===selectedEffect)selectedEffect=null;preservedEvents.splice(i,1);}break;}draw();refreshEffectUI();};
 $("clearEffects").onclick=()=>{preservedEvents=preservedEvents.filter(e=>e?.kind!==EFFECT_KIND);selectedEffect=null;draw();refreshEffectUI();};
@@ -280,6 +282,7 @@ $("effectLed").addEventListener("change",()=>{
  }
 });
 $("effectColor").addEventListener("input",()=>{if(selectedEffect){selectedEffect.color=$("effectColor").value;draw();}});
+$("effectBrightness").addEventListener("input",()=>{$("effectBrightnessValue").textContent=$("effectBrightness").value+"%";if(selectedEffect){selectedEffect.brightness=Number($("effectBrightness").value);draw();}});
 $("add").onclick=()=>{if(leds.length>=MAX_ACTIVE)return;const used=new Set(leds.map(l=>l.index));let i=1;while(used.has(i))i++;leds.unshift({index:i,color:"#ffffff",brightness:40,labelId:nextLedLabel++});renderLEDs();draw();};
 document.querySelectorAll("button[data-field][data-delta]").forEach(button=>{
  button.onclick=()=>{
