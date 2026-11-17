@@ -25,7 +25,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.13</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.18</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="r">Closure revolutions / denominator (R)</label><div class="stepper"><button type="button" data-field="r" data-delta="-5" aria-label="Decrease Closure revolutions / denominator (R) by 5">−5</button><button type="button" data-field="r" data-delta="-1" aria-label="Decrease Closure revolutions / denominator (R) by 1">−1</button><input id="r" type="number" min="1" max="100" step="1" inputmode="numeric" value="3"><button type="button" data-field="r" data-delta="1" aria-label="Increase Closure revolutions / denominator (R) by 1">+1</button><button type="button" data-field="r" data-delta="5" aria-label="Increase Closure revolutions / denominator (R) by 5">+5</button></div></div>
@@ -146,8 +146,8 @@ function draw(){
    const t=i/2000,xAngle=2*Math.PI*r*t,yAngle=2*Math.PI*s*t;
    const angle=(symmetry?xAngle-yAngle:xAngle+yAngle)+startAngle;
    // Camera-facing preview: mirror horizontal mathematical coordinates.
-    const x=300-(radius*Math.cos(xAngle)+d*Math.cos(angle))*scale;
-   const y=300-(radius*Math.sin(xAngle)+d*Math.sin(angle))*scale;
+    const x=300+(radius*Math.sin(xAngle)+d*Math.sin(angle))*scale;
+   const y=300-(radius*Math.cos(xAngle)+d*Math.cos(angle))*scale;
    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   }
   ctx.strokeStyle=previewColor(led.color);ctx.globalAlpha=previewOpacity(led.brightness);ctx.lineWidth=2;ctx.stroke();
@@ -262,8 +262,8 @@ function drawComposition(){
     const t=i/2000,mainAngle=2*Math.PI*m.revolutions*t,x=mainAngle+phase,y=2*Math.PI*m.symmetry*t;
     const direction=m.direction==="ccw"?-1:1;
     const angle=(m.mode==="symmetry"?mainAngle-direction*y:mainAngle+direction*y)+m.offsetAngleDeg*Math.PI/180;
-    const px=300-(armRadius*Math.cos(x)+d*Math.cos(angle))*scale;
-    const py=300-(armRadius*Math.sin(x)+d*Math.sin(angle))*scale;
+    const px=300+(armRadius*Math.sin(x)+d*Math.sin(angle))*scale;
+    const py=300-(armRadius*Math.cos(x)+d*Math.cos(angle))*scale;
     if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
    }
    ctx.strokeStyle=previewColor(led.color);ctx.globalAlpha=previewOpacity(led.brightness);ctx.lineWidth=2;ctx.stroke();
@@ -392,7 +392,7 @@ $("exportComposition").onclick=()=>{
   message("Composition v2 export requested.");
  }catch(err){message("Cannot export Composition: "+err.message,true);}
 };
-const DESIGNER_VERSION="0.6.13";
+const DESIGNER_VERSION="0.6.18";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
