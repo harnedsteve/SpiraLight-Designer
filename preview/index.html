@@ -40,7 +40,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><div style="background:#fff1b8;color:#333;padding:10px;text-align:center">Experimental preview — not the published Designer. <a href="../">Open stable version</a></div><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.23</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.24</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="r">Closure revolutions / denominator (R)</label><div class="stepper"><button type="button" data-field="r" data-delta="-5" aria-label="Decrease Closure revolutions / denominator (R) by 5">−5</button><button type="button" data-field="r" data-delta="-1" aria-label="Decrease Closure revolutions / denominator (R) by 1">−1</button><input id="r" type="number" min="1" max="100" step="1" inputmode="numeric" value="3"><button type="button" data-field="r" data-delta="1" aria-label="Increase Closure revolutions / denominator (R) by 1">+1</button><button type="button" data-field="r" data-delta="5" aria-label="Increase Closure revolutions / denominator (R) by 5">+5</button></div></div>
@@ -49,7 +49,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 <div class="row parameter-row"><label for="startAngle">LED Arm starting angle (degrees)</label><div class="stepper"><button type="button" data-field="startAngle" data-delta="-10" aria-label="Decrease LED Arm starting angle by 10 degrees">−10</button><button type="button" data-field="startAngle" data-delta="-1" aria-label="Decrease LED Arm starting angle by 1 degree">−1</button><input id="startAngle" type="number" min="-360" max="360" step="1" inputmode="decimal" value="0"><button type="button" data-field="startAngle" data-delta="1" aria-label="Increase LED Arm starting angle by 1 degree">+1</button><button type="button" data-field="startAngle" data-delta="10" aria-label="Increase LED Arm starting angle by 10 degrees">+10</button></div></div>
 <div class="row"><span>Main Arm speed</span><strong id="mainPeriod"></strong></div>
 <div class="row"><span>LED Arm speed</span><strong id="ledPeriod"></strong></div></div>
-<div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas><div id="previewFilters" class="preview-filters" role="group" aria-label="LED paths in preview"></div><h3>Visual color effects (prototype)</h3><small>Choose an LED, then tap its path. The tap sets the center; adjust position and width below. Symmetry repeats the highlight on all petals. At crossings, refine the selection with the position slider.</small><div class="effect-controls"><div class="effect-field"><label for="effectSelect">Select effect</label><select id="effectSelect"></select></div><button type="button" id="newEffect">New Effect</button><div class="effect-field"><label for="effectLed">Effect LED</label><select id="effectLed"></select></div><div class="effect-field effect-color"><label id="effectColorLabel" for="effectColor">Color</label><input id="effectColor" type="color" value="#00ffff"></div></div><div class="row"><label for="effectRepeat"><input id="effectRepeat" type="checkbox" checked> Apply to all petals</label></div><label for="effectPosition">Position along petal</label><div class="row effect-slider"><button type="button" id="effectMinus" aria-label="Decrease effect position">−</button><input id="effectPosition" type="range" min="0" max="1000" value="500"><button type="button" id="effectPlus" aria-label="Increase effect position">+</button></div><div class="row"><label for="effectGradient"><input id="effectGradient" type="checkbox"> Color gradient</label></div><div id="gradientEnd" hidden><div class="row"><label id="effectEndColorLabel" for="effectEndColor">End color</label><input id="effectEndColor" type="color" value="#ff00ff"></div><label for="effectEndBrightness"><span id="effectEndBrightnessLabel">End brightness</span> (<output id="effectEndBrightnessValue">40%</output>)</label><div class="row effect-slider"><button type="button" data-effect-slider="effectEndBrightness" data-step="-1" aria-label="Decrease end brightness">−</button><input id="effectEndBrightness" type="range" min="0" max="100" value="40"><button type="button" data-effect-slider="effectEndBrightness" data-step="1" aria-label="Increase end brightness">+</button></div></div><label for="effectWidth">Effect width</label><div class="row effect-slider"><button type="button" data-effect-slider="effectWidth" data-step="-1" aria-label="Decrease effect width">−</button><input id="effectWidth" type="range" min="2" max="400" value="80"><button type="button" data-effect-slider="effectWidth" data-step="1" aria-label="Increase effect width">+</button></div><div class="row"><small id="effectAdjustStatus">Tap a path to create an effect.</small></div><label for="effectBrightness">Effect brightness: <output id="effectBrightnessValue">100%</output></label><div class="row effect-slider"><button type="button" data-effect-slider="effectBrightness" data-step="-1" aria-label="Decrease effect brightness">−</button><input id="effectBrightness" type="range" min="0" max="100" value="100"><button type="button" data-effect-slider="effectBrightness" data-step="1" aria-label="Increase effect brightness">+</button></div><small>0% or black turns the LED off during the effect.</small><label for="effectFade">Effect fade (<output id="effectFadeValue" for="effectFade">0%</output>)</label><div class="row effect-slider"><button type="button" data-effect-slider="effectFade" data-step="-1" aria-label="Decrease effect fade">−</button><input id="effectFade" type="range" min="0" max="100" value="0" aria-describedby="effectFadeHelp"><button type="button" data-effect-slider="effectFade" data-step="1" aria-label="Increase effect fade">+</button></div><small id="effectFadeHelp">0% gives a hard edge. At 100%, the effect reaches full strength only at its center.</small><button type="button" id="undoEffect">Undo effect</button><button type="button" id="clearEffects">Clear effects</button><small id="effectStatus"></small></section>
+<div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas><div id="previewFilters" class="preview-filters" role="group" aria-label="LED paths in preview"></div><h3>Visual color effects (prototype)</h3><small>Choose an LED, then tap its path. The tap sets the center; adjust position and width below. Symmetry repeats the highlight on all petals. At crossings, refine the selection with the position slider.</small><div class="effect-controls"><div class="effect-field"><label for="effectSelect">Select effect</label><select id="effectSelect"></select></div><button type="button" id="newEffect">New Effect</button><div class="effect-field"><label for="effectLed">Effect LED</label><select id="effectLed"></select></div><div class="effect-field effect-color"><label id="effectColorLabel" for="effectColor">Color</label><input id="effectColor" type="color" value="#00ffff"></div></div><div class="row"><label for="effectRepeat"><input id="effectRepeat" type="checkbox" checked> Apply to all petals</label></div><label for="effectPosition">Position along petal</label><div class="row effect-slider"><button type="button" id="effectMinus" aria-label="Decrease effect position">−</button><input id="effectPosition" type="range" min="0" max="1000" value="500"><button type="button" id="effectPlus" aria-label="Increase effect position">+</button></div><div class="row"><label for="effectType">Effect type</label><select id="effectType"><option value="visual-path-color">Solid color</option><option value="visual-path-gradient">Color gradient</option><option value="visual-path-flash">Flash burst</option><option value="visual-path-pulse">Brightness pulse</option></select></div><div id="flashOptions" hidden><div class="row"><label for="flashCount">Flash count</label><input id="flashCount" type="number" min="1" max="12" value="3"></div><div class="row"><label for="flashDuty">Lit per flash (%)</label><input id="flashDuty" type="number" min="5" max="95" value="50"></div></div><div id="gradientEnd" hidden><div class="row"><label><input id="middleStop" type="checkbox"> Add middle color</label></div><div id="middleOptions" hidden><div class="row"><label for="middleColor">Middle color</label><input id="middleColor" type="color" value="#ffaa00"></div><div class="row"><label for="middlePosition">Middle position (%)</label><input id="middlePosition" type="range" min="5" max="95" value="50"></div></div><div class="row"><label id="effectEndColorLabel" for="effectEndColor">End color</label><input id="effectEndColor" type="color" value="#ff00ff"></div><label for="effectEndBrightness"><span id="effectEndBrightnessLabel">End brightness</span> (<output id="effectEndBrightnessValue">40%</output>)</label><div class="row effect-slider"><button type="button" data-effect-slider="effectEndBrightness" data-step="-1" aria-label="Decrease end brightness">−</button><input id="effectEndBrightness" type="range" min="0" max="100" value="40"><button type="button" data-effect-slider="effectEndBrightness" data-step="1" aria-label="Increase end brightness">+</button></div></div><label for="effectWidth">Effect width</label><div class="row effect-slider"><button type="button" data-effect-slider="effectWidth" data-step="-1" aria-label="Decrease effect width">−</button><input id="effectWidth" type="range" min="2" max="400" value="80"><button type="button" data-effect-slider="effectWidth" data-step="1" aria-label="Increase effect width">+</button></div><div class="row"><small id="effectAdjustStatus">Tap a path to create an effect.</small></div><label for="effectBrightness"><span id="effectBrightnessLabel">Effect brightness</span>: <output id="effectBrightnessValue">100%</output></label><div class="row effect-slider"><button type="button" data-effect-slider="effectBrightness" data-step="-1" aria-label="Decrease effect brightness">−</button><input id="effectBrightness" type="range" min="0" max="100" value="100"><button type="button" data-effect-slider="effectBrightness" data-step="1" aria-label="Increase effect brightness">+</button></div><small>0% or black turns the LED off during the effect.</small><label for="effectFade">Effect fade (<output id="effectFadeValue" for="effectFade">0%</output>)</label><div class="row effect-slider"><button type="button" data-effect-slider="effectFade" data-step="-1" aria-label="Decrease effect fade">−</button><input id="effectFade" type="range" min="0" max="100" value="0" aria-describedby="effectFadeHelp"><button type="button" data-effect-slider="effectFade" data-step="1" aria-label="Increase effect fade">+</button></div><small id="effectFadeHelp">0% gives a hard edge. At 100%, the effect reaches full strength only at its center.</small><button type="button" id="undoEffect">Undo effect</button><button type="button" id="clearEffects">Clear effects</button><small id="effectStatus"></small></section>
 <section class="card"><h2>LEDs</h2><small>18 LEDs · 60/m · LED #1 offset 80 mm · up to 10 active</small><button id="add">Add LED</button><div id="leds"></div></section></div>
 <div class="card"><h2>Pattern files</h2>
 <div class="row"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern"></div>
@@ -83,7 +83,7 @@ const EFFECT_KIND="visual-path-color";
 let selectedEffect=null,creatingEffect=true;
 function effects(){return preservedEvents.filter(e=>isPathEffect(e));}
 const GRADIENT_KIND="visual-path-gradient";
-function isPathEffect(effect){return effect?.kind===EFFECT_KIND||effect?.kind===GRADIENT_KIND;}
+function isPathEffect(effect){return [EFFECT_KIND,GRADIENT_KIND,"visual-path-flash","visual-path-pulse"].includes(effect?.kind);}
 function blendEffect(base,target,amount){
  const baseWeight=(1-amount)*base.brightness;
  const targetWeight=amount*target.brightness;
@@ -107,10 +107,24 @@ function effectColor(led,t,S,symmetric,pathEffects){
   const fadeWidth=width/2*Math.min(100,Math.max(0,e.fade??0))/100;
   const amount=fadeWidth>0?Math.min(1,(width/2-distance)/fadeWidth):1;
   let target={color:e.color,brightness:e.color.toLowerCase()==="#000000"?0:Number.isFinite(e.brightness)?e.brightness:led.brightness};
+  const progress=Math.max(0,Math.min(1,offset/width+0.5));
+  if(e.kind==="visual-path-flash"){
+   const phase=progress*(e.flashCount??3);
+   result=progress<1&&phase%1<(e.flashDuty??50)/100?target:{color:"#000000",brightness:0};
+   continue;
+  }
+  if(e.kind==="visual-path-pulse"){
+   const base=led.color.toLowerCase()==="#000000"?0:led.brightness;
+   result={color:led.color,brightness:led.color.toLowerCase()==="#000000"?0:base+(Math.max(base,e.brightness??base)-base)*Math.sin(Math.PI*progress)**2};
+   continue;
+  }
   if(e.kind===GRADIENT_KIND&&typeof e.endColor==="string"){
    const end={color:e.endColor,brightness:e.endColor.toLowerCase()==="#000000"?0:e.endBrightness??led.brightness};
-   const progress=offset/width+0.5;
-   target=blendEffect(target,end,progress);
+   if(e.middleColor){
+    const middle={color:e.middleColor,brightness:e.middleColor==="#000000"?0:(target.brightness+end.brightness)/2};
+    const stop=(e.middlePosition??50)/100;
+    target=progress<=stop?blendEffect(target,middle,progress/stop):blendEffect(middle,end,(progress-stop)/(1-stop));
+   }else target=blendEffect(target,end,progress);
   }
   if(amount===1)result=target;
   else if(amount>0)result=blendEffect(result,target,amount);
@@ -134,7 +148,14 @@ function showEffectBrightness(brightness){
  $("effectBrightnessValue").textContent=$("effectBrightness").value+"%";
 }
 function showGradientControls(){
- const gradient=$("effectGradient").checked;
+ const kind=$("effectType").value;
+ const gradient=kind===GRADIENT_KIND;
+ $("flashOptions").hidden=kind!=="visual-path-flash";
+ $("middleOptions").hidden=!$("middleStop").checked;
+ $("effectColor").disabled=kind==="visual-path-pulse";
+ $("effectBrightnessLabel").textContent=kind==="visual-path-pulse"?"Peak brightness":"Effect brightness";
+ $("effectFade").disabled=kind==="visual-path-pulse"||kind==="visual-path-flash";
+ document.querySelectorAll('[data-effect-slider="effectFade"]').forEach(button=>button.disabled=$("effectFade").disabled);
  $("gradientEnd").hidden=!gradient;
  $("effectEndColor").style.setProperty("--end-color",$("effectEndColor").value);
  $("effectColorLabel").textContent=gradient?"Start color":"Color";
@@ -148,9 +169,14 @@ function refreshEffectUI(preferredIndex=null){
  const sel=$("effectLed"),old=preferredIndex===null?sel.value:String(preferredIndex);sel.replaceChildren();
  for(const l of leds){const o=document.createElement("option");o.value=l.index;o.textContent="LED "+l.labelId+" (index "+l.index+")";sel.append(o);}
  if(leds.some(l=>String(l.index)===old))sel.value=old;else if(selectedEffect&&leds.some(l=>l.index===selectedEffect.ledIndex))sel.value=String(selectedEffect.ledIndex);
- $("effectStatus").textContent=" "+effects().length+" effects · gradients require a firmware update";
+ $("effectStatus").textContent=" "+effects().length+" effects · experimental types require firmware support";
  const e=creatingEffect?null:selectedEffect;
- $("effectGradient").checked=e?.kind===GRADIENT_KIND;
+ $("effectType").value=e?.kind??EFFECT_KIND;
+ $("flashCount").value=e?.flashCount??3;
+ $("flashDuty").value=e?.flashDuty??50;
+ $("middleStop").checked=!!e?.middleColor;
+ $("middleColor").value=e?.middleColor??"#ffaa00";
+ $("middlePosition").value=e?.middlePosition??50;
  $("effectEndColor").value=e?.endColor??"#ff00ff";
  $("effectEndBrightness").value=e?.endBrightness??(effectTarget()?.brightness??40);
  showGradientControls();
@@ -263,14 +289,25 @@ function drawLEDPath(ctx,led,S,symmetric,events,pointAt){
  const samples=new Set(Array.from({length:2001},(_,i)=>i/2000));
  // Sample each gradient span even when it is narrower than the path grid.
  for(const e of pathEffects){
-  if(e.kind!==GRADIENT_KIND||!Number.isFinite(e.width)||e.width<=0)continue;
+  if(e.kind===EFFECT_KIND||!Number.isFinite(e.width)||e.width<=0)continue;
   const repeats=e.repeat&&symmetric?S:1;
   const center=repeats>1?e.position% (1/S):e.position;
   for(let repeat=repeats>1?-1:0;repeat<=repeats;repeat++){
    if(repeats===1&&repeat>0)break;
-   for(let sample=0;sample<=24;sample++){
-    const t=center+repeat/repeats+e.width*(sample/24-0.5);
+   const addSample=u=>{
+    const t=center+repeat/repeats+e.width*(u-0.5);
     if(t>0&&t<1)samples.add(t);
+   };
+   if(e.kind==="visual-path-flash"){
+    const count=e.flashCount??3;
+    for(let flash=0;flash<count;flash++){
+     addSample(flash/count);
+     addSample((flash+(e.flashDuty??50)/100)/count);
+    }
+    addSample(1);
+   }else{
+    for(let sample=0;sample<=24;sample++)addSample(sample/24);
+    if(e.middleColor)addSample((e.middlePosition??50)/100);
    }
   }
  }
@@ -370,7 +407,7 @@ $("preview").addEventListener("click",ev=>{
  const dist=dx*dx+dy*dy;if(dist<best){best=dist;position=t;}}
  if(best>324){$("effectStatus").textContent=" Tap closer to the selected LED path.";return;}
  const SCount=Math.max(1,Number($("s").value));selectedEffect={kind:EFFECT_KIND,ledIndex:led.index,position:Number(position.toFixed(6)),width:Number($("effectWidth").value)/1000/SCount,repeat:$("effectRepeat").checked&&symmetry,color:$("effectColor").value,brightness:Number($("effectBrightness").value),fade:Number($("effectFade").value)};
- if($("effectGradient").checked)applyGradientSettings(selectedEffect);
+ applyGradientSettings(selectedEffect);
  preservedEvents.push(selectedEffect);creatingEffect=false;draw();refreshEffectUI(led.index);
 });
 $("newEffect").onclick=()=>{creatingEffect=true;selectedEffect=null;refreshEffectUI();};
@@ -401,7 +438,16 @@ $("effectLed").addEventListener("change",()=>{
  }
 });
 function applyGradientSettings(effect){
- effect.kind=$("effectGradient").checked?GRADIENT_KIND:EFFECT_KIND;
+ effect.kind=$("effectType").value;
+ for(const key of ["flashCount","flashDuty","middleColor","middlePosition"])delete effect[key];
+ if(effect.kind==="visual-path-flash"){
+  effect.flashCount=Math.max(1,Math.min(12,Math.round(Number($("flashCount").value)||3)));
+  effect.flashDuty=Math.max(5,Math.min(95,Number($("flashDuty").value)||50));
+ }
+ if(effect.kind===GRADIENT_KIND&&$("middleStop").checked){
+  effect.middleColor=$("middleColor").value;
+  effect.middlePosition=Number($("middlePosition").value);
+ }
  if(effect.kind===GRADIENT_KIND){
   effect.endColor=$("effectEndColor").value;
   effect.endBrightness=Number($("effectEndBrightness").value);
@@ -412,8 +458,12 @@ function applyGradientSettings(effect){
   delete effect.returnToBase;
  }
 }
-for(const id of ["effectGradient","effectEndColor","effectEndBrightness"]){
+for(const id of ["effectType","effectEndColor","effectEndBrightness","flashCount","flashDuty","middleStop","middleColor","middlePosition"]){
  $(id).addEventListener("input",()=>{
+  if(id==="effectType"&&$("effectType").value==="visual-path-pulse"&&effectTarget()){
+   showEffectBrightness(100);
+   if(selectedEffect)selectedEffect.brightness=100;
+  }
   showGradientControls();
   if(selectedEffect){applyGradientSettings(selectedEffect);draw();}
  });
@@ -612,7 +662,7 @@ $("exportComposition").onclick=()=>{
   message("Composition v2 export requested.");
  }catch(err){message("Cannot export Composition: "+err.message,true);}
 };
-const DESIGNER_VERSION="0.6.23";
+const DESIGNER_VERSION="0.6.24";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
