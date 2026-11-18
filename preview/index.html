@@ -40,7 +40,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><div style="background:#fff1b8;color:#333;padding:10px;text-align:center">Experimental preview — not the published Designer. <a href="../">Open stable version</a></div><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.20</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.21</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="r">Closure revolutions / denominator (R)</label><div class="stepper"><button type="button" data-field="r" data-delta="-5" aria-label="Decrease Closure revolutions / denominator (R) by 5">−5</button><button type="button" data-field="r" data-delta="-1" aria-label="Decrease Closure revolutions / denominator (R) by 1">−1</button><input id="r" type="number" min="1" max="100" step="1" inputmode="numeric" value="3"><button type="button" data-field="r" data-delta="1" aria-label="Increase Closure revolutions / denominator (R) by 1">+1</button><button type="button" data-field="r" data-delta="5" aria-label="Increase Closure revolutions / denominator (R) by 5">+5</button></div></div>
@@ -96,12 +96,9 @@ function blendEffect(base,target,amount){
  }).join("");
  return {color,brightness};
 }
-function effectColor(led,t){
+function effectColor(led,t,S,symmetric,pathEffects){
  let result={color:led.color,brightness:led.color.toLowerCase()==="#000000"?0:led.brightness};
- const S=Math.max(1,Number($("s").value));
- const symmetric=$("mode").value==="symmetry";
- for(const e of effects()){
-  if(e.ledIndex!==led.index)continue;
+ for(const e of pathEffects){
   const width=Number.isFinite(e.width)?e.width:0.04;
   let offset=t-e.position;
   if(e.repeat&&symmetric)offset-=Math.round(offset*S)/S;
@@ -268,6 +265,36 @@ function previewColor(hex){
  }
  return "#"+rgb.map(v=>Math.round((v+(1-v)*high)*255).toString(16).padStart(2,"0")).join("");
 }
+function drawLEDPath(ctx,led,S,symmetric,events,pointAt){
+ const pathEffects=events.filter(e=>isPathEffect(e)&&e.ledIndex===led.index);
+ const samples=new Set(Array.from({length:2001},(_,i)=>i/2000));
+ // Sample each gradient span even when it is narrower than the path grid.
+ for(const e of pathEffects){
+  if(e.kind!==GRADIENT_KIND||!Number.isFinite(e.width)||e.width<=0)continue;
+  const repeats=e.repeat&&symmetric?S:1;
+  const center=repeats>1?e.position% (1/S):e.position;
+  for(let repeat=repeats>1?-1:0;repeat<=repeats;repeat++){
+   if(repeats===1&&repeat>0)break;
+   for(let sample=0;sample<=24;sample++){
+    const t=center+repeat/repeats+e.width*(sample/24-0.5);
+    if(t>0&&t<1)samples.add(t);
+   }
+  }
+ }
+ let previous=pointAt(0),before=0;
+ for(const t of [...samples].sort((a,b)=>a-b)){
+  if(t===0)continue;
+  const point=pointAt(t);
+  const {color,brightness}=effectColor(led,(before+t)/2,S,symmetric,pathEffects);
+  if(brightness>0){
+   ctx.beginPath();ctx.moveTo(...previous);ctx.lineTo(...point);
+   ctx.strokeStyle=previewColor(color);ctx.globalAlpha=previewOpacity(brightness);
+   ctx.lineWidth=2;ctx.stroke();
+  }
+  previous=point;
+  before=t;
+ }
+}
 function draw(){
  updateSuggestedName();
  const s=Number($("s").value),r=Number($("r").value),radius=Number($("radius").value),exposure=Number($("exposure").value),startAngle=Number($("startAngle").value)*Math.PI/180;
@@ -280,15 +307,12 @@ function draw(){
  leds.forEach(led=>{
   if(hiddenPreviewLEDs.has(led))return;
   const d=OFFSET+(led.index-1)*SPACING;
-  let prev=null,prevColor=led.color;
-  for(let i=0;i<=2000;i++){
-   const t=i/2000,xAngle=2*Math.PI*r*t,yAngle=2*Math.PI*s*t;
+  drawLEDPath(ctx,led,s,symmetry,preservedEvents,t=>{
+   const xAngle=2*Math.PI*r*t,yAngle=2*Math.PI*s*t;
    const angle=(symmetry?xAngle-yAngle:xAngle+yAngle)+startAngle;
-   const point=[300+(radius*Math.sin(xAngle)+d*Math.sin(angle))*scale,300-(radius*Math.cos(xAngle)+d*Math.cos(angle))*scale];
-   const {color,brightness}=effectColor(led,t);
-   if(prev&&brightness>0){ctx.beginPath();ctx.moveTo(...prev);ctx.lineTo(...point);ctx.strokeStyle=previewColor(color);ctx.globalAlpha=previewOpacity(brightness);ctx.lineWidth=2;ctx.stroke();}
-   prev=point;prevColor=color;
-  }
+   return [300+(radius*Math.sin(xAngle)+d*Math.sin(angle))*scale,
+    300-(radius*Math.cos(xAngle)+d*Math.cos(angle))*scale];
+  });
  });
  ctx.globalAlpha=1;
  drawComposition();
@@ -463,16 +487,14 @@ function drawComposition(){
   const m=p.motion,a=p.referenceLedArm,phase=armIndex*Math.PI,armRadius=armIndex===0?radius:radius2;
   p.leds.forEach(led=>{
    const d=a.offsetMm+(led.index-1)*a.spacingMm;
-   ctx.beginPath();
-   for(let i=0;i<=2000;i++){
-    const t=i/2000,mainAngle=2*Math.PI*m.revolutions*t,x=mainAngle+phase,y=2*Math.PI*m.symmetry*t;
+   drawLEDPath(ctx,led,m.symmetry,m.mode==="symmetry",p.events,t=>{
+    const mainAngle=2*Math.PI*m.revolutions*t,x=mainAngle+phase,y=2*Math.PI*m.symmetry*t;
     const direction=m.direction==="ccw"?-1:1;
     const angle=(m.mode==="symmetry"?mainAngle-direction*y:mainAngle+direction*y)+m.offsetAngleDeg*Math.PI/180;
     const px=300+(armRadius*Math.sin(x)+d*Math.sin(angle))*scale;
     const py=300-(armRadius*Math.cos(x)+d*Math.cos(angle))*scale;
-    if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
-   }
-   ctx.strokeStyle=previewColor(led.color);ctx.globalAlpha=previewOpacity(led.brightness);ctx.lineWidth=2;ctx.stroke();
+    return [px,py];
+   });
   });
  });
  ctx.globalAlpha=1;
@@ -598,7 +620,7 @@ $("exportComposition").onclick=()=>{
   message("Composition v2 export requested.");
  }catch(err){message("Cannot export Composition: "+err.message,true);}
 };
-const DESIGNER_VERSION="0.6.20";
+const DESIGNER_VERSION="0.6.21";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
