@@ -40,7 +40,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 @media(min-width:750px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:12px}.layout>.card{margin:0}}
 </style></head>
 <body><div style="background:#fff1b8;color:#333;padding:10px;text-align:center">Experimental preview — not the published Designer. <a href="../">Open stable version</a></div><h1>SpiraLight — Offline Pattern Designer</h1>
-<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.22</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
+<small>Runs locally in this browser. No controller or Internet connection is required after the page is saved.</small><div class="row"><small id="version">Designer v0.6.23</small><button type="button" id="checkUpdates">Check for Updates</button></div><small id="updateStatus" role="status" aria-live="polite"></small>
 <div class="card"><div class="row"><label for="mode">Mode</label><select id="mode"><option value="symmetry">Symmetry Mode</option><option value="constant">Constant Ratio</option></select></div>
 <div class="row parameter-row"><label for="s">Symmetry / numerator (S)</label><div class="stepper"><button type="button" data-field="s" data-delta="-5" aria-label="Decrease Symmetry / numerator (S) by 5">−5</button><button type="button" data-field="s" data-delta="-1" aria-label="Decrease Symmetry / numerator (S) by 1">−1</button><input id="s" type="number" min="1" max="100" step="1" inputmode="numeric" value="5"><button type="button" data-field="s" data-delta="1" aria-label="Increase Symmetry / numerator (S) by 1">+1</button><button type="button" data-field="s" data-delta="5" aria-label="Increase Symmetry / numerator (S) by 5">+5</button></div></div>
 <div class="row parameter-row"><label for="r">Closure revolutions / denominator (R)</label><div class="stepper"><button type="button" data-field="r" data-delta="-5" aria-label="Decrease Closure revolutions / denominator (R) by 5">−5</button><button type="button" data-field="r" data-delta="-1" aria-label="Decrease Closure revolutions / denominator (R) by 1">−1</button><input id="r" type="number" min="1" max="100" step="1" inputmode="numeric" value="3"><button type="button" data-field="r" data-delta="1" aria-label="Increase Closure revolutions / denominator (R) by 1">+1</button><button type="button" data-field="r" data-delta="5" aria-label="Increase Closure revolutions / denominator (R) by 5">+5</button></div></div>
@@ -49,7 +49,7 @@ canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:auto;backg
 <div class="row parameter-row"><label for="startAngle">LED Arm starting angle (degrees)</label><div class="stepper"><button type="button" data-field="startAngle" data-delta="-10" aria-label="Decrease LED Arm starting angle by 10 degrees">−10</button><button type="button" data-field="startAngle" data-delta="-1" aria-label="Decrease LED Arm starting angle by 1 degree">−1</button><input id="startAngle" type="number" min="-360" max="360" step="1" inputmode="decimal" value="0"><button type="button" data-field="startAngle" data-delta="1" aria-label="Increase LED Arm starting angle by 1 degree">+1</button><button type="button" data-field="startAngle" data-delta="10" aria-label="Increase LED Arm starting angle by 10 degrees">+10</button></div></div>
 <div class="row"><span>Main Arm speed</span><strong id="mainPeriod"></strong></div>
 <div class="row"><span>LED Arm speed</span><strong id="ledPeriod"></strong></div></div>
-<div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas><div id="previewFilters" class="preview-filters" role="group" aria-label="LED paths in preview"></div><h3>Visual color effects (prototype)</h3><small>Choose an LED, then tap its path. The tap sets the center; adjust position and width below. Symmetry repeats the highlight on all petals. At crossings, refine the selection with the position slider.</small><div class="effect-controls"><div class="effect-field"><label for="effectSelect">Select effect</label><select id="effectSelect"></select></div><button type="button" id="newEffect">New Effect</button><div class="effect-field"><label for="effectLed">Effect LED</label><select id="effectLed"></select></div><div class="effect-field effect-color"><label id="effectColorLabel" for="effectColor">Color</label><input id="effectColor" type="color" value="#00ffff"></div></div><div class="row"><label for="effectRepeat"><input id="effectRepeat" type="checkbox" checked> Apply to all petals</label></div><label for="effectPosition">Position along petal</label><div class="row effect-slider"><button type="button" id="effectMinus" aria-label="Decrease effect position">−</button><input id="effectPosition" type="range" min="0" max="1000" value="500"><button type="button" id="effectPlus" aria-label="Increase effect position">+</button></div><div class="row"><label for="effectGradient"><input id="effectGradient" type="checkbox"> Color gradient</label></div><div id="gradientEnd" hidden><div class="row"><label id="effectEndColorLabel" for="effectEndColor">End color</label><input id="effectEndColor" type="color" value="#ff00ff"></div><label for="effectEndBrightness"><span id="effectEndBrightnessLabel">End brightness</span> (<output id="effectEndBrightnessValue">40%</output>)</label><div class="row effect-slider"><button type="button" data-effect-slider="effectEndBrightness" data-step="-1" aria-label="Decrease end brightness">−</button><input id="effectEndBrightness" type="range" min="0" max="100" value="40"><button type="button" data-effect-slider="effectEndBrightness" data-step="1" aria-label="Increase end brightness">+</button></div><div class="row"><label for="effectReturn"><input id="effectReturn" type="checkbox"> Return to LED color</label></div></div><label for="effectWidth">Effect width</label><div class="row effect-slider"><button type="button" data-effect-slider="effectWidth" data-step="-1" aria-label="Decrease effect width">−</button><input id="effectWidth" type="range" min="2" max="400" value="80"><button type="button" data-effect-slider="effectWidth" data-step="1" aria-label="Increase effect width">+</button></div><div class="row"><small id="effectAdjustStatus">Tap a path to create an effect.</small></div><label for="effectBrightness">Effect brightness: <output id="effectBrightnessValue">100%</output></label><div class="row effect-slider"><button type="button" data-effect-slider="effectBrightness" data-step="-1" aria-label="Decrease effect brightness">−</button><input id="effectBrightness" type="range" min="0" max="100" value="100"><button type="button" data-effect-slider="effectBrightness" data-step="1" aria-label="Increase effect brightness">+</button></div><small>0% or black turns the LED off during the effect.</small><label for="effectFade">Effect fade (<output id="effectFadeValue" for="effectFade">0%</output>)</label><div class="row effect-slider"><button type="button" data-effect-slider="effectFade" data-step="-1" aria-label="Decrease effect fade">−</button><input id="effectFade" type="range" min="0" max="100" value="0" aria-describedby="effectFadeHelp"><button type="button" data-effect-slider="effectFade" data-step="1" aria-label="Increase effect fade">+</button></div><small id="effectFadeHelp">0% gives a hard edge. At 100%, the effect reaches full strength only at its center.</small><button type="button" id="undoEffect">Undo effect</button><button type="button" id="clearEffects">Clear effects</button><small id="effectStatus"></small></section>
+<div class="layout"><section class="card"><h2>Preview</h2><canvas id="preview" width="600" height="600"></canvas><div id="previewFilters" class="preview-filters" role="group" aria-label="LED paths in preview"></div><h3>Visual color effects (prototype)</h3><small>Choose an LED, then tap its path. The tap sets the center; adjust position and width below. Symmetry repeats the highlight on all petals. At crossings, refine the selection with the position slider.</small><div class="effect-controls"><div class="effect-field"><label for="effectSelect">Select effect</label><select id="effectSelect"></select></div><button type="button" id="newEffect">New Effect</button><div class="effect-field"><label for="effectLed">Effect LED</label><select id="effectLed"></select></div><div class="effect-field effect-color"><label id="effectColorLabel" for="effectColor">Color</label><input id="effectColor" type="color" value="#00ffff"></div></div><div class="row"><label for="effectRepeat"><input id="effectRepeat" type="checkbox" checked> Apply to all petals</label></div><label for="effectPosition">Position along petal</label><div class="row effect-slider"><button type="button" id="effectMinus" aria-label="Decrease effect position">−</button><input id="effectPosition" type="range" min="0" max="1000" value="500"><button type="button" id="effectPlus" aria-label="Increase effect position">+</button></div><div class="row"><label for="effectGradient"><input id="effectGradient" type="checkbox"> Color gradient</label></div><div id="gradientEnd" hidden><div class="row"><label id="effectEndColorLabel" for="effectEndColor">End color</label><input id="effectEndColor" type="color" value="#ff00ff"></div><label for="effectEndBrightness"><span id="effectEndBrightnessLabel">End brightness</span> (<output id="effectEndBrightnessValue">40%</output>)</label><div class="row effect-slider"><button type="button" data-effect-slider="effectEndBrightness" data-step="-1" aria-label="Decrease end brightness">−</button><input id="effectEndBrightness" type="range" min="0" max="100" value="40"><button type="button" data-effect-slider="effectEndBrightness" data-step="1" aria-label="Increase end brightness">+</button></div></div><label for="effectWidth">Effect width</label><div class="row effect-slider"><button type="button" data-effect-slider="effectWidth" data-step="-1" aria-label="Decrease effect width">−</button><input id="effectWidth" type="range" min="2" max="400" value="80"><button type="button" data-effect-slider="effectWidth" data-step="1" aria-label="Increase effect width">+</button></div><div class="row"><small id="effectAdjustStatus">Tap a path to create an effect.</small></div><label for="effectBrightness">Effect brightness: <output id="effectBrightnessValue">100%</output></label><div class="row effect-slider"><button type="button" data-effect-slider="effectBrightness" data-step="-1" aria-label="Decrease effect brightness">−</button><input id="effectBrightness" type="range" min="0" max="100" value="100"><button type="button" data-effect-slider="effectBrightness" data-step="1" aria-label="Increase effect brightness">+</button></div><small>0% or black turns the LED off during the effect.</small><label for="effectFade">Effect fade (<output id="effectFadeValue" for="effectFade">0%</output>)</label><div class="row effect-slider"><button type="button" data-effect-slider="effectFade" data-step="-1" aria-label="Decrease effect fade">−</button><input id="effectFade" type="range" min="0" max="100" value="0" aria-describedby="effectFadeHelp"><button type="button" data-effect-slider="effectFade" data-step="1" aria-label="Increase effect fade">+</button></div><small id="effectFadeHelp">0% gives a hard edge. At 100%, the effect reaches full strength only at its center.</small><button type="button" id="undoEffect">Undo effect</button><button type="button" id="clearEffects">Clear effects</button><small id="effectStatus"></small></section>
 <section class="card"><h2>LEDs</h2><small>18 LEDs · 60/m · LED #1 offset 80 mm · up to 10 active</small><button id="add">Add LED</button><div id="leds"></div></section></div>
 <div class="card"><h2>Pattern files</h2>
 <div class="row"><label for="name">Pattern name</label><input id="name" type="text" maxlength="48" value="New Pattern"></div>
@@ -110,12 +110,7 @@ function effectColor(led,t,S,symmetric,pathEffects){
   if(e.kind===GRADIENT_KIND&&typeof e.endColor==="string"){
    const end={color:e.endColor,brightness:e.endColor.toLowerCase()==="#000000"?0:e.endBrightness??led.brightness};
    const progress=offset/width+0.5;
-   if(e.returnToBase){
-    const base={color:led.color,brightness:led.color.toLowerCase()==="#000000"?0:led.brightness};
-    target=blendEffect(base,end,1-Math.abs(2*progress-1));
-   }else{
-    target=blendEffect(target,end,progress);
-   }
+   target=blendEffect(target,end,progress);
   }
   if(amount===1)result=target;
   else if(amount>0)result=blendEffect(result,target,amount);
@@ -142,14 +137,7 @@ function showGradientControls(){
  const gradient=$("effectGradient").checked;
  $("gradientEnd").hidden=!gradient;
  $("effectEndColor").style.setProperty("--end-color",$("effectEndColor").value);
- const returning=gradient&&$("effectReturn").checked;
- $("effectEndColorLabel").textContent=returning?"Midpoint color":"End color";
- $("effectEndBrightnessLabel").textContent=returning?"Midpoint brightness":"End brightness";
- $("effectColorLabel").textContent=returning?"Start uses LED color":gradient?"Start color":"Color";
- $("effectColor").disabled=returning;
- $("effectBrightness").disabled=returning;
- for(const button of document.querySelectorAll('[data-effect-slider="effectBrightness"]'))
-  button.disabled=returning;
+ $("effectColorLabel").textContent=gradient?"Start color":"Color";
  $("effectEndBrightnessValue").textContent=$("effectEndBrightness").value+"%";
 }
 function refreshEffectUI(preferredIndex=null){
@@ -164,7 +152,6 @@ function refreshEffectUI(preferredIndex=null){
  const e=creatingEffect?null:selectedEffect;
  $("effectGradient").checked=e?.kind===GRADIENT_KIND;
  $("effectEndColor").value=e?.endColor??"#ff00ff";
- $("effectReturn").checked=!!e?.returnToBase;
  $("effectEndBrightness").value=e?.endBrightness??(effectTarget()?.brightness??40);
  showGradientControls();
  $("effectAdjustStatus").textContent=creatingEffect?"Tap the chosen LED path to create a new effect.":e?"Selected effect: adjust its settings or change its LED.":"Choose New Effect to begin.";
@@ -418,15 +405,14 @@ function applyGradientSettings(effect){
  if(effect.kind===GRADIENT_KIND){
   effect.endColor=$("effectEndColor").value;
   effect.endBrightness=Number($("effectEndBrightness").value);
-  if($("effectReturn").checked)effect.returnToBase=true;
-  else delete effect.returnToBase;
+  delete effect.returnToBase;
  }else{
   delete effect.endColor;
   delete effect.endBrightness;
   delete effect.returnToBase;
  }
 }
-for(const id of ["effectGradient","effectEndColor","effectEndBrightness","effectReturn"]){
+for(const id of ["effectGradient","effectEndColor","effectEndBrightness"]){
  $(id).addEventListener("input",()=>{
   showGradientControls();
   if(selectedEffect){applyGradientSettings(selectedEffect);draw();}
@@ -626,7 +612,7 @@ $("exportComposition").onclick=()=>{
   message("Composition v2 export requested.");
  }catch(err){message("Cannot export Composition: "+err.message,true);}
 };
-const DESIGNER_VERSION="0.6.22";
+const DESIGNER_VERSION="0.6.23";
 $("checkUpdates").onclick=async()=>{
  const status=$("updateStatus"),button=$("checkUpdates");
  button.disabled=true;status.textContent="Checking for updates…";
